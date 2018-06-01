@@ -1,0 +1,9 @@
+---
+all:
+  children:
+    ci_routers:  # Cisco CSR1000v
+      vars:
+        DEVICE_TYPE: "ios"
+      hosts:
+        test1:
+...

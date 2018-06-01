@@ -1,0 +1,72 @@
+---
+# Include the date/time stamp on localhost for reference later.
+- hosts: localhost
+  tasks:
+    - include_role:
+        name: dtg
+
+# This playbook assumes there are already probes configured on the PERs in
+# scope for this test. It retrieves the detailed statistics, parses them,
+# and writes them to CSV files for examination.
+- name: "Retrieve aggregated stats from existing probes"
+  hosts: perf_routers
+  vars_files:
+    - "login_creds.vault"
+  tasks:
+
+    # Include the setup tasks and do not check NTP while there.
+    # NTP does not matter since we are only collecting stats based
+    # on an existing probe.
+    - include_tasks: "tasks_setup.yml"
+      vars:
+        do_ntp: false
+
+    # Collect the detailed data from the router for each probe and store
+    # this in a list of dictionaries.
+    - name: "IOS >> Gather IP SLA aggregated stats"
+      ios_command:
+        provider: "{{ login_creds }}"
+        commands: "show ip sla statistics aggregated {{ item.0.id }}"
+      register: PROBE_OUTPUT
+      when: "item.1.ipv4addr != LB0.address"
+      with_together:
+        - "{{ targets }}"
+        - "{{ LOOKUP_HASHES }}"
+      loop_control:
+        label: "id:{{ item.0.id }}"
+
+    # Print the output from the probes when -v debugging is enabled. This
+    # will be ugly and hard to read, but useful for troubleshooting.
+    - name: "DEBUG >> Dump aggregated stats"
+      debug:
+        var: PROBE_OUTPUT
+        verbosity: 1
+
+    # Store the ouput to disk using the 'lperf_get.j2' template which creates
+    # nice looking columns for the output.
+    - name: "SYS >> Write probe output to disk in CSV format"
+      template:
+        src: "./templates/lperf_get.j2"
+        dest: >-
+          ./files/{{ inventory_hostname }}_{{
+          hostvars.localhost.DTG|default('noDTG') }}_lperf.csv
+
+# Perform the cleanup on all these CSV files by inserting the proper
+# file header and removing the source files.
+- import_playbook: "cleanup_play.yml"
+  vars:
+    file_id: "lperf"
+    csv_header: >-
+      src_host,src_ip,dest_host,dest_ip
+      ,rtt_cnt,rtt_min,rtt_avg,rtt_max,rtt_ovthr,rtt_ovthp
+      ,lat_cnt,lat_sd_min,lat_sd_avg,lat_sd_max
+      ,lat_ds_min,lat_ds_avg,lat_ds_max
+      ,jit_sd_cnt,jit_sd_min,jit_sd_avg,jit_sd_max
+      ,jit_ds_cnt,jit_ds_min,jit_ds_avg,jit_ds_max
+      ,los_sd,los_sd_per,los_sd_pmin,los_sd_pmax
+      ,los_sd_imin,los_sd_imax
+      ,los_ds,los_ds_per,los_ds_pmin,los_ds_pmax
+      ,los_ds_imin,los_ds_imax
+      ,pkt_ooseq,pkt_tdrop,pkt_late,pkt_skip
+      ,voc_mos_min,voc_mos_max,voc_icpif_min,voc_icpif_max
+...

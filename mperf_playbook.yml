@@ -1,0 +1,84 @@
+---
+# Include the date/time stamp on localhost for reference later.
+- hosts: localhost
+  tasks:
+    - include_role:
+        name: dtg
+
+# Run a mid-term performance test on the network which does not
+# configure anything on the devices, but instead uses exec commands
+# for rapid feedback.
+- name: "Perform midterm performance test on network"
+  hosts: perf_routers
+  vars_files:
+    - "login_creds.vault"
+  tasks:
+
+    # Perform basic error checking to ensure the repeat count
+    # is within bounds.
+    - name: "SYS >> Sanity check; assert 10 <= repeat <= 1000"
+      assert:
+        that:
+          - "repeat | int | between(10, 1000)"
+        msg: "repeat out of bounds; {{ repeat }}"
+
+    # Include the setup tasks and check NTP while there.
+    - include_tasks: "tasks_setup.yml"
+      vars:
+        do_ntp: true
+
+    # include the tasks to determine the online targets.
+    - include_tasks: "tasks_ontarget.yml"
+
+    # Perform the test, which includes three steps in sequence.
+    #   1. IP SLA voice probe for detailed performance stats
+    #   2. ICMP ping with 1500 byte packet and DF-set for fragmentation test
+    #   3. MPLS LSPV probe to test label switch path health
+    - name: "IOS >> Send UDP-jitter, ICMP, and LSPV probes to targets"
+      ios_command:
+        provider: "{{ login_creds }}"
+        commands:
+          - >
+              ip sla udp-jitter {{ item.ipv4addr }} 16384 source-ip
+              {{ LB0.address }} codec g711ulaw codec-numpackets {{ repeat }}
+          - >
+              ping {{ item.ipv4addr }} source {{ LB0.address }}
+              repeat 3 timeout 1 size 1500 tos 160 df-bit
+          - >
+              ping mpls ipv4 {{ item.ipv4addr }}/32 fec-type generic source
+              {{ LB0.address }} force-explicit-null timeout 1 exp 5
+      when: "item.ipv4addr != LB0.address"
+      register: PROBE_OUTPUT
+      with_items: "{{ ONLINE_TARGETS }}"
+      loop_control:
+        label: "{{ item.hostname }}({{ item.ipv4addr }})"
+
+    # Print the output from the probes when -v debugging is enabled. This
+    # will be ugly and hard to read, but useful for troubleshooting.
+    - name: "DEBUG >> Dump output from probes"
+      debug:
+        var: PROBE_OUTPUT
+        verbosity: 1
+
+    # Store the ouput to disk using the 'mperf.j2' template which creates
+    # nice looking columns for the output.
+    - name: "SYS >> Write probe output to disk in CSV format"
+      template:
+        src: "templates/mperf.j2"
+        dest: >-
+          files/{{ inventory_hostname }}_{{
+          hostvars.localhost.DTG|default('noDTG') }}_mperf.csv
+
+# Perform the cleanup on all these CSV files by inserting the proper
+# file header and removing the source files.
+- import_playbook: "cleanup_play.yml"
+  vars:
+    file_id: "mperf"
+    csv_header: >-
+      src_host,src_ip,dest_host,dest_ip
+      ,rtt_cnt,rtt_avg
+      ,lat_cnt,lat_sd_avg,lat_ds_avg
+      ,jit_sd_cnt,jit_sd_avg,jit_ds_cnt,jit_ds_avg
+      ,los_sd,los_ds,voice_mos
+      ,mtu_ok?,lspv_codes,synopsis
+...

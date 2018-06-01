@@ -1,0 +1,89 @@
+---
+# Include the date/time stamp on localhost for reference later.
+- hosts: localhost
+  tasks:
+    - include_role:
+        name: dtg
+
+# This playbook configures IP SLA probes on PERs in scope which are expected
+# to run for longer periods of time, using another playbook to collect data
+# occasionally.
+- name: "Configure long-term IP SLA probes"
+  hosts: perf_routers
+  vars_files:
+    - "login_creds.vault"
+  tasks:
+
+    # Ensure that state is present (adding new probes), absent (removing
+    # completed probes), or restarted (restarting existing probes). Any
+    # other value for state is invalid. Also, ensure the time period is
+    # between 1 and 24 hours to prevent long term network saturation.
+    - name: "SYS >> Assert desired state and run time are valid"
+      assert:
+        that:
+          - "state in ['present', 'absent', 'restarted']"
+          - "time_hrs | int | between(1, 24)"
+        msg: >
+          'state' must be 'present' or 'absent'; saw {{ state }}
+          'time_hrs' must be an int between 1-24; saw {{ time_hrs }}
+
+    # The probe ID must be at least 6 digits so that it does not
+    # interface with any manually configured probes that others may
+    # be using for troubleshooting. Furthermore, the target must be
+    # defined for every probe.
+    - name: "SYS >> Sanity check; ensure probe is valid"
+      assert:
+        that:
+          - "item.id | int | between(100000, 2147483647)"
+          - "item.target is defined"
+        msg: >
+          'id' must be 100000-2147483647; saw {{ item.id }}
+          If 'id' was in range, then 'target' is undefined
+      with_items: "{{ targets }}"
+
+    # Include the setup tasks and check NTP only if the state
+    # is not absent. If we are removing probes, the state of NTP
+    # is irrelevant, so do not waste time checking it.
+    - include_tasks: "tasks_setup.yml"
+      vars:
+        do_ntp: "state | lower != 'absent'"
+
+    # Using python filter 'get_sla', determine the correct SLA between pairs
+    # of hosts. This is a complex operation that generally involves passing
+    # in a list of groups from the inventory and the output from the
+    # 'resolve' filter to determine what the site-to-site threshold is based
+    # on DISA's Telecommunications SLA.
+    - name: "SYS >> Determine the latency SLA to targets"
+      set_fact:
+        LAT_SLA: "{{ regional_sla | get_sla(groups, LOOKUP_HASHES) }}"
+
+    # Check the output from the filter to ensure the latency SLA list
+    # is correct.
+    - name: "DEBUG >> Dump latency SLA list"
+      debug:
+        var: LAT_SLA
+        verbosity: 1
+
+    # Log into the PERs to find out which probes are configured by
+    # checking the running configuration.
+    - name: "IOS >> Gather IOS IP SLA probes"
+      ios_command:
+        provider: "{{ login_creds }}"
+        commands: "show running-config | include ^ip sla [0-9]+$"
+      register: IOS_PROBES
+
+    # Dump the raw IOS output for troubleshooting, which will be ugly
+    # and difficult to read.
+    - name: "DEBUG >> Dump IOS IP SLA probes"
+      debug:
+        var: IOS_PROBES
+        verbosity: 1
+
+    # Using the 'lperf_put' template, write the probe details to the
+    # PER and start the IP SLA probe.
+    - name: "IOS >> Configure IP SLA probes, state: {{ state }}"
+      ios_config:
+        provider: "{{ login_creds }}"
+        src: "templates/lperf_put.j2"
+        match: none
+...

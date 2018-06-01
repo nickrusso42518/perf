@@ -1,0 +1,7 @@
+{% for p in PROBE_OUTPUT.results -%}
+{% if p.skipped is not defined %}
+{% set stats_csv = p.stdout[0] | ios_ipsla_stats | ios_ipsla_csv(False) %}
+{% set lhash     = LOOKUP_HASHES[loop.index0] %}
+{{ inventory_hostname }},{{ LB0.address }},{{ lhash.hostname }},{{ lhash.ipv4addr }},{{ stats_csv }}
+{% endif %}
+{% endfor %}

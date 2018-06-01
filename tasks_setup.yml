@@ -1,0 +1,36 @@
+---
+# Perform resolution using custom Python filter, combined with the
+# map filter, to pull out all the target hostnames and resolve
+# their IPv4 addresses.
+- name: "SYS >> Resolve target hostnames to IPv4 addresses"
+  set_fact:
+    LOOKUP_HASHES: >-
+      {{ targets | map(attribute='target') | list | resolve }}
+  run_once: true
+
+# To have a successful resolution, the key supplied should have
+# yielded a valid host IP not in CIDR notation, along with a
+# non-empty, non-False hostname.
+- name: "SYS >> Assert resolution succeeded"
+  assert:
+    that:
+      - "item.ipv4addr | ipv4 == item.ipv4addr"
+      - "'/' not in item.ipv4addr"
+      - "item.hostname"
+    msg: "Item lacks a valid IPv4 address or hostname - {{ item }}"
+  with_items: "{{ LOOKUP_HASHES }}"
+  loop_control:
+    label: "{{ item.hostname }}"
+  run_once: true
+
+# Check NTP on the source device to ensure one-way latency data
+# can be accurately collected.
+- include_role:
+    name: check_ntp
+  when: "do_ntp"
+
+# Capture the loopback0 interface from each device. This is used because
+# the 'ios_facts' module appears buggy.
+- include_role:
+    name: get_lb0
+...

@@ -1,0 +1,9 @@
+{% for p in PROBE_OUTPUT.results -%}
+{% if p.skipped is not defined %}
+{% set stats    = p.stdout[0] | ios_ipsla_stats %}
+{% set mtu_ok   = ( (p.stdout_lines[1][5] | ios_ping_stats)['pkt_cmp'] > 0 )%}
+{% set lspv_str = p.stdout_lines[2][13] %}
+{% set synopsis = stats | perf_synopsis(lspv_str, mtu_ok) %}
+{{ inventory_hostname }},{{ LB0.address }},{{ p.item.hostname }},{{ p.item.ipv4addr }},{{ stats | ios_ipsla_csv }},{{ mtu_ok }},{{ lspv_str }},{{ synopsis }}
+{% endif %}
+{% endfor %}

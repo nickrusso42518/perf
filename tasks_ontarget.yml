@@ -1,0 +1,42 @@
+---
+# Determining the target devices that are currently on the network
+# can save time because pinging a target for which the local router
+# has no route is guaranteed to fail. Do not even waste time doing it,
+# since outages are tracked on the network map. Note that the
+# entire block is only run once, but the 'ONLINE_TARGETS' fact is
+# available in for all hosts in the play, simplifying the references
+# later.
+- name: "BLOCK >> Perform online target checking on one host only"
+  block:
+
+    # Capture the entire FIB of host routes which can later be used to
+    # determine which targets are on the network.
+    - name: "IOS >> Capture host routes in IOS FIB"
+      ios_command:
+        provider: "{{ login_creds }}"
+        commands: "show ip cef | include /32"
+      register: IOS_FIB
+
+    # Print the FIB table for debugging purposes when -v debuging is enabled.
+    - name: "DEBUG >> Dump IOS FIB output"
+      debug:
+        var: IOS_FIB
+        verbosity: 1
+
+    # Use a custom filter called 'intersect_block' to find out which items
+    # in the LOOKUP_HASHES are present in the IOS_FIB block of text. This
+    # reveals which targets are on the network. There is no point in trying
+    # to do a performance test towards a target not online; it wastes time.
+    - name: "SYS >> Build list of online targets"
+      set_fact:
+        ONLINE_TARGETS: >-
+          {{ IOS_FIB.stdout[0] | intersect_block(LOOKUP_HASHES) }}
+
+    # Print out the list of online targets, which will be a subset of the
+    # IOS FIB block of text.
+    - name: "DEBUG >> Dump online targets"
+      debug:
+        var: ONLINE_TARGETS
+        verbosity: 1
+  run_once: true
+...

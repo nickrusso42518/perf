@@ -1,0 +1,53 @@
+---
+- name: "Refine collected data locally"
+  hosts: localhost
+  tasks:
+    - name: "SYS >> Ensure parameters were defined"
+      assert:
+        that:
+          - "file_id is defined"
+          - "csv_header is defined"
+        msg: "Required parameters not defined"
+
+    - name: "SYS >> Ensure src directory exists"
+      file:
+        path: "./files/"
+        state: directory
+
+    - name: "SYS >> Ensure dest directory exists"
+      file:
+        path: "./rollups/"
+        state: directory
+
+    - name: "SYS >> Store src directory and dest path/filename"
+      set_fact:
+        SRC_DIR: "./files/"
+        DEST_FQDN: "./rollups/{{ file_id }}_{{ DTG }}.csv"
+
+    - name: "SYS >> Concatenate CSV files into rollup"
+      assemble:
+        src: "{{ SRC_DIR }}"
+        regexp: "_{{ DTG }}_{{ file_id }}.csv"
+        dest: "{{ DEST_FQDN }}"
+        mode: 0444
+
+    - name: "SYS >> Insert comma-separated header"
+      lineinfile:
+        path: "{{ DEST_FQDN }}"
+        line: "{{ csv_header }}"
+        insertbefore: BOF
+
+    - name: "SYS >> Delete original CSV files"
+      file:
+        path: "{{ item }}"
+        state: absent
+      with_fileglob: "{{ SRC_DIR }}/*_{{ DTG }}_{{ file_id }}.csv"
+
+    - name: "SYS >> View file locally; arrows to pan, q to quit"
+      debug:
+        msg: "column -s, -t {{ DEST_FQDN }} | less -S"
+
+    - name: "SYS >> Securely copy the rollup CSV to a WANMGR"
+      debug:
+        msg: "scp {{ DEST_FQDN }} scp@WANMGR_0365:/facts/"
+...

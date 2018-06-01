@@ -1,0 +1,9 @@
+{{ inventory_hostname }}
+{%- for p in PROBE_OUTPUT.results -%}
+{%- if p.skipped is not defined -%}
+{%- set stats    = p.stdout_lines[0][4] | ios_ping_stats -%}
+,{{ stats.rtt_avg }}
+{%- else -%}
+,
+{%- endif -%}
+{%- endfor -%}

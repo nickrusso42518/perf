@@ -1,0 +1,26 @@
+{% for target in targets %}
+{# ONLY TAKE ACTION WHEN THE SRC/DEST DIFFER -#}
+{% if LOOKUP_HASHES[loop.index0].ipv4addr != LB0.address %}
+{# WHEN STATE IS PRESENT, NEED TO NOT ADD SLAS ALREADY CONFIGURED -#}
+{% if state == 'present' and (target.id|string) not in IOS_PROBES.stdout[0] %}
+ip sla {{ target.id }}
+ udp-jitter {{ LOOKUP_HASHES[loop.index0].ipv4addr }} 16384 codec g711ulaw source-ip {{ LB0.address }}
+ tos 160
+ verify-data
+ tag lperf_{{ hostvars.localhost.DTG }}
+ threshold {{ LAT_SLA[loop.index0] }}
+ frequency 30
+ history hours-of-statistics-kept {{ time_hrs }}
+ip sla reaction-configuration {{ target.id }} react overThreshold threshold-type immediate action-type trapOnly
+ip sla reaction-configuration {{ target.id }} react timeout threshold-type immediate action-type trapOnly
+ip sla reaction-configuration {{ target.id }} react verifyError threshold-type immediate action-type trapOnly
+ip sla schedule {{ target.id }} life {{ time_hrs * 3600 }} start-time now
+{# WHEN STATE IS ABSENT, NEED TO ONLY REMOVE SLAS ALREADY CONFIGURED -#}
+{% elif state == 'absent' and (target.id|string) in IOS_PROBES.stdout[0] %}
+no ip sla {{ target.id }}
+{# WHEN STATE IS RESTARTED, NEED TO ONLY RESTART SLAS ALREADY CONFIGURED -#}
+{% elif state == 'restarted' and (target.id|string) in IOS_PROBES.stdout[0] %}
+ip sla restart {{ target.id }}
+{% endif %}
+{% endif %}
+{% endfor %}

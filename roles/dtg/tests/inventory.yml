@@ -1,0 +1,7 @@
+---
+all:
+  children:
+    control:  # Control machines
+      hosts:
+        localhost:
+...

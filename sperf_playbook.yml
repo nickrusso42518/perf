@@ -1,0 +1,73 @@
+---
+- hosts: localhost
+  tasks:
+    - include_role:
+        name: dtg
+
+# Run a short-term performance test on the network which does not
+# configure anything on the devices, but instead uses exec commands
+# for rapid feedback.
+- name: "Perform short performance test on network"
+  hosts: perf_routers
+  vars_files:
+    - "login_creds.vault"
+  tasks:
+    # Include the setup tasks and do not check NTP while there.
+    - include_tasks: "tasks_setup.yml"
+      vars:
+        do_ntp: false
+
+    # include the tasks to determine the online targets.
+    - include_tasks: "tasks_ontarget.yml"
+
+    # A final one-time task is needed. The first row of the spreadsheet
+    # must contain all of the targets, so pull out the hostnames into a list
+    # of strings for use later. The other performance tests have a static
+    # number of columns so this step is not necessary there.
+    # This is delegated to localhost since only the control machine cares
+    # about it when combining all the individual host CSV files
+    - name: "SYS >> Build list of hostnames"
+      set_fact:
+        CSV_NAMES: "{{ ONLINE_TARGETS | map(attribute='hostname') | list }}"
+      run_once: true
+      delegate_to: localhost
+      delegate_facts: true
+
+    # Send the ICMP echo requests to all online targets (except ourselves).
+    # The command is not very customizable to keep this test quick
+    # and simple without much user interaction.
+    - name: "IOS >> Send ICMP probes to targets"
+      ios_command:
+        provider: "{{ login_creds }}"
+        commands:
+          - "ping {{ item.ipv4addr }} source {{ LB0.address }} time 1 tos 160"
+      when: "item.ipv4addr != LB0.address"
+      register: PROBE_OUTPUT
+      with_items: "{{ ONLINE_TARGETS }}"
+      loop_control:
+        label: "{{ item.hostname }}({{ item.ipv4addr }})"
+
+    # Print the output from the probes when -v debugging is enabled. This
+    # will be ugly and hard to read, but useful for troubleshooting.
+    - name: "DEBUG >> Dump output from probes"
+      debug:
+        var: PROBE_OUTPUT
+        verbosity: 1
+
+    # Store the ouput to disk using the 'sperf.j2' template which creates
+    # nice looking columns for the output.
+    - name: "SYS >> Write probe output to disk in CSV format"
+      template:
+        src: "templates/sperf.j2"
+        dest: >-
+          files/{{ inventory_hostname }}_{{
+          hostvars.localhost.DTG|default('noDTG') }}_sperf.csv
+
+# Perform the cleanup on all these CSV files by inserting the proper
+# file header and removing the source files. The header ends up like this:
+# host1,host2,host3,host4 (etc)
+- import_playbook: "cleanup_play.yml"
+  vars:
+    file_id: "sperf"
+    csv_header: ",{{ ','.join(hostvars.localhost.CSV_NAMES) }}"
+...

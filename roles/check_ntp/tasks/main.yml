@@ -1,0 +1,27 @@
+---
+- name: "DEBUG >> Dump device type"
+  debug:
+    var: DEVICE_TYPE
+    verbosity: 1
+
+- include_tasks: "tasks_{{ DEVICE_TYPE }}.yml"
+
+- name: "DEBUG >> Dump NTP status"
+  debug:
+    var: NTP_STATUS
+    verbosity: 1
+
+- name: "SYS >> Determine state check text"
+  set_fact:
+    CHECK_TEXT: >-
+      {{ 'Clock is synchronized' if synchronized
+      else 'Clock is unsynchronized' }}
+
+- name: "SYS >> Assert NTP synchronized: {{ synchronized }}"
+  assert:
+    that:
+      - "'{{ CHECK_TEXT }}' in NTP_STATUS.stdout[0]"
+    msg: |-
+      Could not find check text '{{ CHECK_TEXT }}' within device output:
+      '{{ NTP_STATUS.stdout[0] }}'
+...

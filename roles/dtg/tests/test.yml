@@ -1,0 +1,46 @@
+---
+- hosts: localhost
+  tasks:
+    - name: "SYS >> Ensure DTG is undefined"
+      assert:
+        that:
+          - "not DTG is defined"
+
+    - include_role:
+        name: dtg
+
+    - name: "DEBUG >> Print DTG"
+      debug:
+        var: DTG
+
+    - name: "SYS >> Ensure DTG has been updated"
+      assert:
+        that:
+          - "DTG is defined"
+          - "DTG != 'noDTG'"
+          - "DTG | length == 15"
+          - "DTG[:8] | int > 20180101"
+          - "DTG[8] == 'T'"
+          - "DTG[9:] | int >= 0"
+
+    - name: "SYS >> Wait for DTG to advance"
+      pause:
+        seconds: 1
+
+    - name: "SYS >> Store old DTG"
+      set_fact:
+        OLD_DTG: "{{ DTG }}"
+
+    - include_role:
+        name: dtg
+
+    - name: "DEBUG >> Print second DTG"
+      debug:
+        var: DTG
+
+    - name: "SYS >> Ensure the new time > old time"
+      assert:
+        that:
+          - "DTG > OLD_DTG"
+        msg: "OLD_DTG <= DTG, should be impossible"
+...
