@@ -22,7 +22,8 @@
       assert:
         that:
           - "state in ['present', 'absent', 'restarted']"
-          - "time_hrs | int | between(1, 24)"
+          - "time_hrs | int >= 1"
+          - "time_hrs | int <= 24"
         msg: >
           'state' must be 'present' or 'absent'; saw {{ state }}
           'time_hrs' must be an int between 1-24; saw {{ time_hrs }}
@@ -34,7 +35,8 @@
     - name: "SYS >> Sanity check; ensure probe is valid"
       assert:
         that:
-          - "item.id | int | between(100000, 2147483647)"
+          - "item.id | int >= 100000"
+          - "item.id | int <= 2147483647"
           - "item.target is defined"
         msg: >
           'id' must be 100000-2147483647; saw {{ item.id }}

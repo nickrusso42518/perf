@@ -1,6 +1,7 @@
-# perf_playbook series
+# Performance Testers
 This series of playbooks accomplish a number of performance test
-tasks in the network. They are briefly described below.
+tasks in the network. They are briefly described below, either each
+one becoming more time consuming and comprehensive than the one before it.
 
   * `sperf`: Short-term performance test builds a matrix of average
     RTT times. This is suitable for general public distribution. Unlike
@@ -15,24 +16,92 @@ tasks in the network. They are briefly described below.
 
   * `lperf`: Long-term performance test focuses on detailed performance
     data collected over hours. It is provided in support of sustained
-    exercises or as proof to DISA that they are not meeting their SLAs.
+    efforts or as proof to your SP that they are not meeting their SLAs.
 
 Given these reachability results, some basic conclusions about the
 state of the network are drawn and summarized in a synopsis for each target.
 Collected information is rolled up in a master CSV file for quick reference.
 Again, the length and composition of each CSV file differs between the 3 tests.
 
+> Contact information:
+> Email:    njrusmc@gmail.com
+> Twitter:  @nickrusso42518
+
+  * [Supported platforms](#supported-platforms)
+  * [Hosts](#hosts)
+  * [Variables](#variables)
+  * [Templates](#templates)
+  * [LSPV Codes](#lspv-codes)
+  * [IP SLA Columns](#ip-sla-columns)
+
+## Supported platforms
+Cisco IOS routers are supported today. The routers need to be on a version
+that supports the exec command set `ip sla udp-jitter` and `ping mpls ipv4`
+in order to function with the `mperf` and `lperf` playbooks. All three
+playbooks require basic ICMP `ping` functionality, which all Cisco IOS
+routers support.
+
+Testing was conducted on the following platforms and versions:
+  * Cisco CSR1000v, version 16.07.01a, running in AWS
+
 ## Hosts
-All Cisco IOS MPLS routers are in scope for this playbook. In its default state,
+All Cisco IOS MPLS routers in the `perf_routers` group are in scope. Normally,
 the playbook runs what is effectively a full IP/MPLS reachability test in the
 global table. For a more rapid test, you can modify the `targets` list to
-include only PERs, while also changing the hosts in scope to only be PERs
-as well. Combination approaches are also supported. For example, the set
-of IOS PERs will target the larger set of all Cisco LSRs.
+include only some routers, while also changing the hosts in scope. These
+combination approaches are also supported. For example, maybe logging into
+one router per region then targeting 2 routers in every other region
+provides a sufficient picture of the current network performance.
+
+The following are __REQUIRED__ for this playbooks to work:
+  * All routers must be in a group containing the string `"region"`
+  * All routers must be in exactly one of these regional groups
+  * All regional groups must be children of `perf_routers`
+  * Each regional group must have a corresponding `regional_sla` dict.
+    This provides the SLA committments to all other regions, including
+    its own (intra-regional SLA).
+
+```
+# hosts.yml
+---
+all:
+  hosts:
+    localhost:
+  children:
+    perf_routers:
+      children:
+        west_usa_region:
+          hosts:
+            csr1:
+        east_usa_region:
+          hosts:
+            csr2:
+...
+```
+
+Below are two examples of group variables files, one per region.
+
+```
+# group_vars/west_usa_region.yml
+---
+regional_sla:
+  east_usa_region: 100
+  west_usa_region: 35
+...
+```
+
+```
+# group_vars/east_usa_region.yml
+---
+regional_sla:
+  east_usa_region: 30
+  west_usa_region: 100
+...
+```
 
 ## Variables
 These playbooks rely only on `group_vars` which are defined for the general
-PER group. The main variable is a sequence called `targets` which lists the
+router group. The main variable is a sequence called `targets` which lists the
 __global__ hostname of any remote host. Nodes not yet activated/configured
 should still be added to the list; the playbook has the intelligence to
 only consider "online" targets based on /32 FIB entries present.
@@ -40,7 +109,11 @@ To save processing time, this collection of "online" targets is only run
 on one host then referenced from the rest. The output parsing
 is accomplished using the `intersect_block` custom filter.
 
-As a minor option, operators can modify the IP SLA repeat count.
+Regional SLA values were discussed above as they are more relevant to
+hosts (and their geographic locations) than they are to general playbook
+operation.
+
+As a minor `mperf` option, operators can modify the IP SLA repeat count.
 For quick reachability testing, the repeat count should be small. For
 reliable performance testing, the repeat count should be high. __Note that
 probes that run too long or incur too much loss will simply fail to provide
@@ -57,19 +130,25 @@ of the current playbook implementation, and may be improved in a
 future revision. The repeat count is only valid for the
 `mperf` playbook.
 
+One final note: The targets in this list __must__ be loopback0 IP addresses.
+This limitation may seem arbitrary, but it simplifies the code and generally
+makes sense, since we are testing reachability of MPLS LSPs in many cases.
+These IPs may not be the same IPs as those used for management of a given node
+as specified in the inventory. For networks where devices are managed in-band
+by their loopback0 IP addresses, the target name and the inventory name can
+be the same.
+
 ```
 ---
+DEVICE_TYPE: ios
 state: present
 time_hrs: 1
-repeat: 100
+repeat: 10
 targets:
-- id: 125046
-  target: RHN2_PER_G
-- id: 125094
-  target: RHN3_PER_G
-- id: 125062
-  target: RHN4_PER_G
-[snip]
+  - id: 100101
+    target: csr1_lb0
+  - id: 100102
+    target: csr2_lb0
 ...
 ```
 
@@ -77,11 +156,9 @@ targets:
 The templates are __NOT__ commented for readability in this playbook since
 they are not used for issuing commands to a network device. Rather, the
 template is used for transforming IOS output into a human-readable CSV file
-for further analysis and archival. Many custom filters are used:
-
-  * `ios_ipsla_stats`: Given IP SLA output, returns a hash of RTT metrics
-  * `ios_ipsla_csv`: Takes hash from above as input and writes a CSV string
-  * `perf_synopsis`: Takes hash from above plus LSPV codes and makes synopsis
+for further analysis and archival. Many custom filters are used and are
+individually documented in the Python source code, which can be
+found in the `plugins/filter/filter.py` file.
 
 __The templates should not be changed at the operator level.__
 
@@ -118,7 +195,7 @@ sheets when testing MPLS reachability.
 ## IP SLA Columns
 The table below provides the detailed explanations for the abbreviated
 column headers in the spreadsheet. This is used only for `mperf` and `lperf`
-playbooks as `sperf` only shows average RTT which is not specified.
+playbooks as `sperf` only shows average RTT for brevity.
 
 ```
 +---------------+-------------------------------------------------------------+

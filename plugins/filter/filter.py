@@ -345,15 +345,20 @@ class FilterModule(object):
         returned if the host is not found in any group, which is considered
         to be an error case.
         '''
+        #print('groups.keys():')
+        #print(groups.keys())
         # Iterate over all group names
         for key in groups.keys():
-            # If the group is a PER group
-            if 'ios_per_' in key:
+            # If its a regional grouping of routers
+            if 'region' in key:
                 #print('checking key ' + key)
                 # Iterate over each host in the group list
-                for s in groups[key]:
+                for inv_item in groups[key]:
                     # Check to see if the host is in a given group
-                    if host.upper() == s:
+                    hostu = host.upper()
+                    inv_itemu = inv_item.upper()
+                    #print('compare: {0} {1}'.format(hostu, inv_itemu))
+                    if hostu in inv_itemu or inv_itemu in hostu:
                         #print('{0} is in group {1}'.format(host, key))
                         return key
 
@@ -376,7 +381,7 @@ class FilterModule(object):
         target_group_list = []
         for t in targets:
             # Find the group for a given target
-            tgt_group = FilterModule._get_sla_group(t['hostname'][:-2], groups)
+            tgt_group = FilterModule._get_sla_group(t['hostname'], groups)
             if not tgt_group:
                 return False
             # Add that group to the group list
@@ -524,4 +529,3 @@ class FilterModule(object):
                 return False
         else:
             return False
-

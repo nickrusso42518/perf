@@ -1,0 +1,5 @@
+---
+regional_sla:
+  east_usa_region: 100
+  west_usa_region: 35
+...
