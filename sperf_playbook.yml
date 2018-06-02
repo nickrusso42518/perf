@@ -13,12 +13,12 @@
     - "login_creds.vault"
   tasks:
     # Include the setup tasks and do not check NTP while there.
-    - include_tasks: "tasks_setup.yml"
+    - include_tasks: "common/tasks_setup.yml"
       vars:
         do_ntp: false
 
     # include the tasks to determine the online targets.
-    - include_tasks: "tasks_ontarget.yml"
+    - include_tasks: "common/tasks_ontarget.yml"
 
     # A final one-time task is needed. The first row of the spreadsheet
     # must contain all of the targets, so pull out the hostnames into a list
@@ -28,7 +28,7 @@
     # about it when combining all the individual host CSV files
     - name: "SYS >> Build list of hostnames"
       set_fact:
-        CSV_NAMES: "{{ ONLINE_TARGETS | map(attribute='hostname') | list }}"
+        CSV_NAMES: "{{ ONLINE_TARGETS | map(attribute='key') | list }}"
       run_once: true
       delegate_to: localhost
       delegate_facts: true
@@ -66,7 +66,7 @@
 # Perform the cleanup on all these CSV files by inserting the proper
 # file header and removing the source files. The header ends up like this:
 # host1,host2,host3,host4 (etc)
-- import_playbook: "cleanup_play.yml"
+- import_playbook: "common/cleanup_playbook.yml"
   vars:
     file_id: "sperf"
     csv_header: ",{{ ','.join(hostvars.localhost.CSV_NAMES) }}"

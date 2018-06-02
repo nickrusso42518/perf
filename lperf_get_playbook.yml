@@ -17,7 +17,7 @@
     # Include the setup tasks and do not check NTP while there.
     # NTP does not matter since we are only collecting stats based
     # on an existing probe.
-    - include_tasks: "tasks_setup.yml"
+    - include_tasks: "common/tasks_setup.yml"
       vars:
         do_ntp: false
 
@@ -53,7 +53,7 @@
 
 # Perform the cleanup on all these CSV files by inserting the proper
 # file header and removing the source files.
-- import_playbook: "cleanup_play.yml"
+- import_playbook: "common/cleanup_playbook.yml"
   vars:
     file_id: "lperf"
     csv_header: >-

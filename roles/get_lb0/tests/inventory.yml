@@ -1,0 +1,7 @@
+---
+all:
+  children:
+    ci_routers:  # Cisco CSR1000v
+      hosts:
+        test1:
+...

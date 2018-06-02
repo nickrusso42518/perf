@@ -19,16 +19,17 @@
     - name: "SYS >> Sanity check; assert 10 <= repeat <= 1000"
       assert:
         that:
-          - "repeat | int | between(10, 1000)"
+          - "repeat | int >= 10"
+          - "repeat | int <= 1000"
         msg: "repeat out of bounds; {{ repeat }}"
 
     # Include the setup tasks and check NTP while there.
-    - include_tasks: "tasks_setup.yml"
+    - include_tasks: "common/tasks_setup.yml"
       vars:
         do_ntp: true
 
     # include the tasks to determine the online targets.
-    - include_tasks: "tasks_ontarget.yml"
+    - include_tasks: "common/tasks_ontarget.yml"
 
     # Perform the test, which includes three steps in sequence.
     #   1. IP SLA voice probe for detailed performance stats
@@ -71,7 +72,7 @@
 
 # Perform the cleanup on all these CSV files by inserting the proper
 # file header and removing the source files.
-- import_playbook: "cleanup_play.yml"
+- import_playbook: "common/cleanup_playbook.yml"
   vars:
     file_id: "mperf"
     csv_header: >-

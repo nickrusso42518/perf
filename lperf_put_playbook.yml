@@ -44,7 +44,7 @@
     # Include the setup tasks and check NTP only if the state
     # is not absent. If we are removing probes, the state of NTP
     # is irrelevant, so do not waste time checking it.
-    - include_tasks: "tasks_setup.yml"
+    - include_tasks: "common/tasks_setup.yml"
       vars:
         do_ntp: "state | lower != 'absent'"
 

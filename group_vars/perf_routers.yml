@@ -5,9 +5,7 @@ time_hrs: 1
 repeat: 10
 targets:
   - id: 100101
-    target: csr1
+    target: csr1_lb0
   - id: 100102
-    target: csr2
-  - id: 100103
-    target: csr3
+    target: csr2_lb0
 ...

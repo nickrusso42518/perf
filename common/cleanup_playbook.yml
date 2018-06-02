@@ -11,18 +11,18 @@
 
     - name: "SYS >> Ensure src directory exists"
       file:
-        path: "./files/"
+        path: "../files/"
         state: directory
 
     - name: "SYS >> Ensure dest directory exists"
       file:
-        path: "./rollups/"
+        path: "../rollups/"
         state: directory
 
     - name: "SYS >> Store src directory and dest path/filename"
       set_fact:
-        SRC_DIR: "./files/"
-        DEST_FQDN: "./rollups/{{ file_id }}_{{ DTG }}.csv"
+        SRC_DIR: "../files/"
+        DEST_FQDN: "../rollups/{{ file_id }}_{{ DTG }}.csv"
 
     - name: "SYS >> Concatenate CSV files into rollup"
       assemble:
@@ -45,9 +45,9 @@
 
     - name: "SYS >> View file locally; arrows to pan, q to quit"
       debug:
-        msg: "column -s, -t {{ DEST_FQDN }} | less -S"
+        msg: "column -s, -t {{ DEST_FQDN[3:] }} | less -S"
 
-    - name: "SYS >> Securely copy the rollup CSV to a WANMGR"
+    - name: "SYS >> Securely copy the rollup CSV to a mgmt station"
       debug:
-        msg: "scp {{ DEST_FQDN }} scp@WANMGR_0365:/facts/"
+        msg: "scp {{ DEST_FQDN[3:] }} scp@WANMGR_0365:/facts/"
 ...

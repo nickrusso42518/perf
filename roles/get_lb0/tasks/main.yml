@@ -1,0 +1,19 @@
+---
+- name: "IOS >> Get Loopback0 IPv4 address and netmask"
+  ios_command:
+    provider: "{{ login_creds }}"
+    commands:
+      - "show ip interface Loopback0 | include Internet_address"
+  register: IOS_LB0
+
+- name: "SYS >> Parse Loopback0 IPv4 address and netmask"
+  set_fact:
+    LB0: "{{ IOS_LB0.stdout[0] | ios_parse_ip }}"
+
+- name: "SYS >> Validate Loopback0 IPv4 address and netmask"
+  assert:
+    that:
+      - "LB0.address | ipv4"
+      - "LB0.subnet | int == 32"
+    msg: "Loopback0 lacks a valid IPv4 address or /32 mask - {{ LB0 }}"
+...

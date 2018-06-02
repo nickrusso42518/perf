@@ -20,7 +20,7 @@
     msg: "Item lacks a valid IPv4 address or hostname - {{ item }}"
   with_items: "{{ LOOKUP_HASHES }}"
   loop_control:
-    label: "{{ item.hostname }}"
+    label: "{{ item.key }}"
   run_once: true
 
 # Check NTP on the source device to ensure one-way latency data
