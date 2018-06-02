@@ -1,0 +1,7 @@
+src_host,src_ip,dest_host,dest_ip ,rtt_cnt,rtt_avg ,lat_cnt,lat_sd_avg,lat_ds_avg ,jit_sd_cnt,jit_sd_avg,jit_ds_cnt,jit_ds_avg ,los_sd,los_ds,voice_mos ,mtu_ok?,lspv_codes,synopsis
+csr1,192.168.0.1,csr2_lb0,192.168.0.2,50,1,0,0,0,49,1,49,1,0,0,4.34,False,!!!!!,Issues: MTU/frag test.
+csr1,192.168.0.1,csr3_lb0,192.168.0.3,50,88,50,56,32,49,1,49,1,0,0,4.34,False,!!!!!,Issues: MTU/frag test.
+csr2,192.168.0.2,csr1_lb0,192.168.0.1,50,1,0,0,0,49,1,49,1,0,0,4.34,False,!!!!!,Issues: MTU/frag test.
+csr2,192.168.0.2,csr3_lb0,192.168.0.3,50,87,50,42,45,49,1,49,1,0,0,4.34,False,!!!!!,Issues: MTU/frag test.
+csr3,192.168.0.3,csr1_lb0,192.168.0.1,50,88,50,32,56,49,1,49,1,0,0,4.34,False,!!!!!,Issues: MTU/frag test.
+csr3,192.168.0.3,csr2_lb0,192.168.0.2,50,87,50,45,42,49,1,49,1,0,0,4.34,False,!!!!!,Issues: MTU/frag test.

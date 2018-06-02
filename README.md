@@ -70,33 +70,34 @@ all:
   children:
     perf_routers:
       children:
-        west_usa_region:
+        usa_region:  # AWS North Virginia, USA
           hosts:
             csr1:
-        east_usa_region:
-          hosts:
             csr2:
+        emear_region:  # AWS Frankfurt, Germany
+          hosts:
+            csr3:
 ...
 ```
 
 Below are two examples of group variables files, one per region.
 
 ```
-# group_vars/west_usa_region.yml
+# group_vars/usa_region.yml
 ---
 regional_sla:
-  east_usa_region: 100
-  west_usa_region: 35
+  usa_region: 30
+  emear_region: 88  # Aggressive SLA chosen to show over threshold counters
 ...
 ```
 
 ```
-# group_vars/east_usa_region.yml
+# group_vars/emear_region.yml
 ---
 regional_sla:
-  east_usa_region: 30
-  west_usa_region: 100
-...
+  usa_region: 120  # Conservative SLA chosen to show good performance
+  emear_region: 40
+...`
 ```
 
 ## Variables

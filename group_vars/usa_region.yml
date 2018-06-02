@@ -1,0 +1,5 @@
+---
+regional_sla:
+  usa_region: 30
+  emear_region: 88  # Aggressive SLA chosen to show over threshold counters
+...
