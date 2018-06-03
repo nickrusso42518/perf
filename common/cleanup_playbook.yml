@@ -47,7 +47,7 @@
       debug:
         msg: "column -s, -t {{ DEST_FQDN[3:] }} | less -S"
 
-    - name: "SYS >> Securely copy the rollup CSV to a mgmt station"
+    - name: "SYS >> Copy the command below to SCP the rollup off-box"
       debug:
-        msg: "scp {{ DEST_FQDN[3:] }} scp@WANMGR_0365:/facts/"
+        msg: "scp {{ DEST_FQDN[3:] }} {{ scp.user }}@{{ scp.host }}:/perf/"
 ...
