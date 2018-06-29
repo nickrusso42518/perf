@@ -1,0 +1,41 @@
+---
+- name: "SYS >> Define test FIB text"
+  set_fact:
+    FIB: |+
+      Prefix               Next Hop             Interface
+      10.32.18.100/32      10.32.18.200         GigabitEthernet0/0/0
+      10.32.18.101/32      10.32.18.200         GigabitEthernet0/0/0
+      10.32.18.102/32      10.32.18.202         GigabitEthernet0/0/1
+      10.32.18.103/32      10.32.18.200         GigabitEthernet0/0/0
+      10.32.18.104/32      10.32.18.200         GigabitEthernet0/0/0
+      10.32.18.123/32      receive              Loopback99
+      10.32.18.124/32      10.32.18.243         GigabitEthernet0/0/2
+      10.32.18.125/32      10.32.18.200         GigabitEthernet0/0/0
+      10.32.18.127/32      10.32.18.200         GigabitEthernet0/0/0
+      10.32.18.200/32      attached             GigabitEthernet0/0/0
+      10.32.18.201/32      receive              GigabitEthernet0/0/0
+      10.32.18.202/32      attached             GigabitEthernet0/0/1
+      10.32.18.203/32      receive              GigabitEthernet0/0/1
+
+    LOOKUP_HASHES:
+      - key: "host1"
+        hostname: "host1"
+        ipv4addr: "10.32.18.100"
+      - key: "host2"
+        hostname: "host2"
+        ipv4addr: "10.32.18.203"
+      - key: "host3"
+        hostname: "host3"
+        ipv4addr: "10.0.0.3"
+
+- name: "SYS >> Find intersection"
+  set_fact:
+    INTSCT_BLOCK: "{{ FIB | intersect_block(LOOKUP_HASHES) }}"
+
+- name: "SYS >> Validate output"
+  assert:
+    that:
+      - "INTSCT_BLOCK | length == 2"
+      - "INTSCT_BLOCK[0] == LOOKUP_HASHES[0]"
+      - "INTSCT_BLOCK[1] == LOOKUP_HASHES[1]"
+...

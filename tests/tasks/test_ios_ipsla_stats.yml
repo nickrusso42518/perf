@@ -1,0 +1,193 @@
+---
+- name: "SYS >> Store single-run IP SLA stats"
+  set_fact:
+    SLA_ONE: |+
+      Type of operation: udp-jitter
+      Latest RTT: 5 milliseconds
+      Latest operation start time: 15:42:34 UTC Sat Nov 11 2017
+      Latest operation return code: OK
+      RTT Values:
+      Number Of RTT: 0                RTT Min/Avg/Max: 1/2/3 milliseconds
+      Latency one-way time:
+      Number of Latency one-way Samples: 4
+      Source to Destination Latency one way Min/Avg/Max: 5/6/7 milliseconds
+      Destination to Source Latency one way Min/Avg/Max: 8/9/10 milliseconds
+      Jitter Time:
+      Number of SD Jitter Samples: 11
+      Number of DS Jitter Samples: 12
+      Source to Destination Jitter Min/Avg/Max: 13/14/15 milliseconds
+      Destination to Source Jitter Min/Avg/Max: 16/17/18 milliseconds
+      Over Threshold:
+      Number Of RTT Over Threshold: 19 (20%)
+      Packet Loss Values:
+      Loss Source to Destination: 21
+      Source to Destination Loss Periods Number: 22
+      Source to Destination Loss Period Length Min/Max: 23/24
+      Source to Destination Inter Loss Period Length Min/Max: 25/26
+      Loss Destination to Source: 27
+      Destination to Source Loss Periods Number: 28
+      Destination to Source Loss Period Length Min/Max: 29/30
+      Destination to Source Inter Loss Period Length Min/Max: 31/32
+      Out Of Sequence: 33     Tail Drop: 34
+      Packet Late Arrival: 35 Packet Skipped: 36
+      Voice Score Values:
+      Calculated Planning Impairment Factor (ICPIF): 37
+      MOS score: 38.39
+      Number of successes: 40
+      Number of failures: 41
+
+- name: "SYS >> Parse stats for single-run"
+  set_fact:
+    STATS_ONE_HASH: "{{ SLA_ONE | ios_ipsla_stats }}"
+
+- name: "DEBUG >> Print single-run stats"
+  debug:
+    var: STATS_ONE_HASH
+
+- name: "SYS >> Validate output for single-run"
+  assert:
+    that:
+      - "STATS_ONE_HASH"
+      - "STATS_ONE_HASH.rtt_cnt       == 0"
+      - "STATS_ONE_HASH.rtt_min       == 1"
+      - "STATS_ONE_HASH.rtt_avg       == 2"
+      - "STATS_ONE_HASH.rtt_max       == 3"
+      - "STATS_ONE_HASH.rtt_ovthr     == 19"
+      - "STATS_ONE_HASH.rtt_ovthp     == 20"
+      - "STATS_ONE_HASH.lat_cnt       == 4"
+      - "STATS_ONE_HASH.lat_sd_min    == 5"
+      - "STATS_ONE_HASH.lat_sd_avg    == 6"
+      - "STATS_ONE_HASH.lat_sd_max    == 7"
+      - "STATS_ONE_HASH.lat_ds_min    == 8"
+      - "STATS_ONE_HASH.lat_ds_avg    == 9"
+      - "STATS_ONE_HASH.lat_ds_max    == 10"
+      - "STATS_ONE_HASH.jit_sd_cnt    == 11"
+      - "STATS_ONE_HASH.jit_sd_min    == 13"
+      - "STATS_ONE_HASH.jit_sd_avg    == 14"
+      - "STATS_ONE_HASH.jit_sd_max    == 15"
+      - "STATS_ONE_HASH.jit_ds_cnt    == 12"
+      - "STATS_ONE_HASH.jit_ds_min    == 16"
+      - "STATS_ONE_HASH.jit_ds_avg    == 17"
+      - "STATS_ONE_HASH.jit_ds_max    == 18"
+      - "STATS_ONE_HASH.los_sd        == 21"
+      - "STATS_ONE_HASH.los_sd_per    == 22"
+      - "STATS_ONE_HASH.los_sd_pmin   == 23"
+      - "STATS_ONE_HASH.los_sd_pmax   == 24"
+      - "STATS_ONE_HASH.los_sd_imin   == 25"
+      - "STATS_ONE_HASH.los_sd_imax   == 26"
+      - "STATS_ONE_HASH.los_ds        == 27"
+      - "STATS_ONE_HASH.los_ds_per    == 28"
+      - "STATS_ONE_HASH.los_ds_pmin   == 29"
+      - "STATS_ONE_HASH.los_ds_pmax   == 30"
+      - "STATS_ONE_HASH.los_ds_imin   == 31"
+      - "STATS_ONE_HASH.los_ds_imax   == 32"
+      - "STATS_ONE_HASH.pkt_ooseq     == 33"
+      - "STATS_ONE_HASH.pkt_tdrop     == 34"
+      - "STATS_ONE_HASH.pkt_late      == 35"
+      - "STATS_ONE_HASH.pkt_skip      == 36"
+      - "STATS_ONE_HASH.voc_mos_min   == -1"
+      - "STATS_ONE_HASH.voc_mos_max   == -1"
+      - "STATS_ONE_HASH.voc_icpif_min == -1"
+      - "STATS_ONE_HASH.voc_icpif_max == -1"
+      - "STATS_ONE_HASH.voc_mos       == '38.39'"
+      - "STATS_ONE_HASH.voc_icpif     == 37"
+
+- name: "SYS >> Print the single-run IP SLA CSV"
+  debug:
+    msg: "{{ STATS_ONE_HASH | ios_ipsla_csv }}"
+
+- name: "SYS >> Store multi-run IP SLA stats"
+  set_fact:
+    SLA_AGG: |+
+      IPSLA operation id: 1
+      Start Time Index: 16:15:11 UTC Thu Nov 23 2017
+      Type of operation: udp-jitter
+      Voice Scores:
+      MinOfICPIF: 1	MaxOfICPIF: 2	MinOfMOS: 3.3	MaxOfMOS: 4.4
+      RTT Values:
+      Number Of RTT: 5		RTT Min/Avg/Max: 6/7/8 milliseconds
+      Latency one-way time:
+      Number of Latency one-way Samples: 9
+      Source to Destination Latency one way Min/Avg/Max: 10/11/12 milliseconds
+      Destination to Source Latency one way Min/Avg/Max: 13/14/15 milliseconds
+      Jitter Time:
+      Number of SD Jitter Samples: 16
+      Number of DS Jitter Samples: 17
+      Source to Destination Jitter Min/Avg/Max: 18/19/20 milliseconds
+      Destination to Source Jitter Min/Avg/Max: 21/22/23 milliseconds
+      Over Threshold:
+      Number Of RTT Over Threshold: 24 (0%)
+      Packet Loss Values:
+      Loss Source to Destination: 25
+      Source to Destination Loss Periods Number: 26
+      Source to Destination Loss Period Length Min/Max: 27/28
+      Source to Destination Inter Loss Period Length Min/Max: 29/30
+      Loss Destination to Source: 31
+      Destination to Source Loss Periods Number: 32
+      Destination to Source Loss Period Length Min/Max: 33/34
+      Destination to Source Inter Loss Period Length Min/Max: 35/36
+      Out Of Sequence: 37	Tail Drop: 38
+      Packet Late Arrival: 39	Packet Skipped: 40
+      Number of successes: 41
+      Number of failures: 42
+
+- name: "SYS >> Parse stats for multi-run"
+  set_fact:
+    STATS_AGG_HASH: "{{ SLA_AGG | ios_ipsla_stats }}"
+
+- name: "DEBUG >> Print multi-run stats"
+  debug:
+    var: STATS_AGG_HASH
+
+- name: "SYS >> Validate output for multi-run"
+  assert:
+    that:
+      - "STATS_AGG_HASH"
+      - "STATS_AGG_HASH.rtt_cnt       == 5"
+      - "STATS_AGG_HASH.rtt_min       == 6"
+      - "STATS_AGG_HASH.rtt_avg       == 7"
+      - "STATS_AGG_HASH.rtt_max       == 8"
+      - "STATS_AGG_HASH.rtt_ovthr     == 24"
+      - "STATS_AGG_HASH.rtt_ovthp     == 0"
+      - "STATS_AGG_HASH.lat_cnt       == 9"
+      - "STATS_AGG_HASH.lat_sd_min    == 10"
+      - "STATS_AGG_HASH.lat_sd_avg    == 11"
+      - "STATS_AGG_HASH.lat_sd_max    == 12"
+      - "STATS_AGG_HASH.lat_ds_min    == 13"
+      - "STATS_AGG_HASH.lat_ds_avg    == 14"
+      - "STATS_AGG_HASH.lat_ds_max    == 15"
+      - "STATS_AGG_HASH.jit_sd_cnt    == 16"
+      - "STATS_AGG_HASH.jit_sd_min    == 18"
+      - "STATS_AGG_HASH.jit_sd_avg    == 19"
+      - "STATS_AGG_HASH.jit_sd_max    == 20"
+      - "STATS_AGG_HASH.jit_ds_cnt    == 17"
+      - "STATS_AGG_HASH.jit_ds_min    == 21"
+      - "STATS_AGG_HASH.jit_ds_avg    == 22"
+      - "STATS_AGG_HASH.jit_ds_max    == 23"
+      - "STATS_AGG_HASH.los_sd        == 25"
+      - "STATS_AGG_HASH.los_sd_per    == 26"
+      - "STATS_AGG_HASH.los_sd_pmin   == 27"
+      - "STATS_AGG_HASH.los_sd_pmax   == 28"
+      - "STATS_AGG_HASH.los_sd_imin   == 29"
+      - "STATS_AGG_HASH.los_sd_imax   == 30"
+      - "STATS_AGG_HASH.los_ds        == 31"
+      - "STATS_AGG_HASH.los_ds_per    == 32"
+      - "STATS_AGG_HASH.los_ds_pmin   == 33"
+      - "STATS_AGG_HASH.los_ds_pmax   == 34"
+      - "STATS_AGG_HASH.los_ds_imin   == 35"
+      - "STATS_AGG_HASH.los_ds_imax   == 36"
+      - "STATS_AGG_HASH.pkt_ooseq     == 37"
+      - "STATS_AGG_HASH.pkt_tdrop     == 38"
+      - "STATS_AGG_HASH.pkt_late      == 39"
+      - "STATS_AGG_HASH.pkt_skip      == 40"
+      - "STATS_AGG_HASH.voc_mos_min   == '3.3'"
+      - "STATS_AGG_HASH.voc_mos_max   == '4.4'"
+      - "STATS_AGG_HASH.voc_icpif_min == 1"
+      - "STATS_AGG_HASH.voc_icpif_max == 2"
+      - "STATS_AGG_HASH.voc_mos       == -1"
+      - "STATS_AGG_HASH.voc_icpif     == -1"
+
+- name: "SYS >> Print the multi-run IP SLA CSV"
+  debug:
+    msg: "{{ STATS_AGG_HASH | ios_ipsla_csv(false) }}"
+...

@@ -1,0 +1,14 @@
+---
+- hosts: localhost
+  tasks:
+    - name: "SYS >> Add dummy hosts to /etc/hosts/"
+      lineinfile:
+        path: "/etc/hosts"
+        line: "{{ item }}"
+        state: present
+      with_items:
+        - "10.125.0.61 csr1"
+        - "10.125.0.62 csr2"
+        - "10.125.0.63 csr3"
+      become: true
+...

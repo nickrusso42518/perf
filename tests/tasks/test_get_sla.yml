@@ -1,0 +1,31 @@
+---
+- name: "SYS >> Define test SLA vars"
+  set_fact:
+    usa_targets:
+      - hostname: "csr1"
+      - hostname: "csr2"
+    emear_targets:
+      - hostname: "csr3"
+    sla:
+      usa_region: 100
+      emear_region: 200
+
+- name: "SYS >> Find SLA"
+  set_fact:
+    USA_SLA: "{{ sla | get_sla(groups, usa_targets) }}"
+    EMEAR_SLA: "{{ sla | get_sla(groups, emear_targets) }}"
+
+- name: "SYS >> Assert SLA was found for USA region"
+  assert:
+    that: "iter == sla.usa_region"
+  with_items: "{{ USA_SLA }}"
+  loop_control:
+    loop_var: iter
+
+- name: "SYS >> Assert SLA was found for EMEAR region"
+  assert:
+    that: "iter == sla.emear_region"
+  with_items: "{{ EMEAR_SLA }}"
+  loop_control:
+    loop_var: iter
+...

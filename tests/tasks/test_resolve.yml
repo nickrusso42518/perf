@@ -1,0 +1,81 @@
+---
+- name: "Test invalid resolve input, non strings"
+  assert:
+    that:
+      - "not None | resolve"
+      - "not [] | resolve"
+
+- name: "Test invalid resolve input, strings"
+  assert:
+    that:
+      - "(char | resolve).key == char"
+      - "not (('BEFORE' ~ char) | resolve).ipv4addr"
+      - "not ((char ~ 'AFTER') | resolve).hostname"
+  with_items:
+    - "`"
+    - "-"
+    - "|"
+    - "!"
+    - "@"
+    - "#"
+    - "$"
+    - "%"
+    - "^"
+    - "&"
+    - "*"
+    - "("
+    - ")"
+    - "["
+    - "]"
+    - "{"
+    - "}"
+    - "/"
+    - "\\"
+    - "?"
+    - ">"
+    - "<"
+    - "."
+    - ","
+    - "="
+    - "+"
+    - "~"
+  loop_control:
+    loop_var: char
+    label: "testing special char {{ char }}"
+
+- name: "SYS >> Resolve a single hostname"
+  set_fact:
+    RESOLVE: "{{ 'csr1' | resolve }}"
+
+- name: "SYS >> Validate results from single hostname"
+  assert:
+    that:
+      - "RESOLVE.hostname == 'csr1'"
+      - "RESOLVE.key == 'csr1'"
+      - "RESOLVE.ipv4addr == '10.125.0.61'"
+
+- name: "SYS >> Store key, host, and IPv4 address lists"
+  set_fact:
+    KEY_LIST: ['CSR1', 'csr2', 'cSr3', 'bogus']
+    HOST_LIST: ['csr1', 'csr2', 'csr3', false]
+    IPV4_LIST: ['10.125.0.61', '10.125.0.62', '10.125.0.63', false]
+
+- name: "SYS >> Perform resolution on key list"
+  set_fact:
+    RESOLVE_LIST: "{{ KEY_LIST | resolve }}"
+
+- name: "Validate results from multiple hostnames"
+  assert:
+    that:
+      - "iter.0.hostname == iter.3"
+      - "iter.0.key      == iter.1"
+      - "iter.0.ipv4addr == iter.2"
+  with_together:
+    - "{{ RESOLVE_LIST }}"
+    - "{{ KEY_LIST }}"
+    - "{{ IPV4_LIST }}"
+    - "{{ HOST_LIST }}"
+  loop_control:
+    loop_var: iter
+    label: "{{ iter.1 }}"
+...

@@ -10,7 +10,7 @@
 # Return code used to sum the rc from individual lint tests
 rc=0
 # Identify banned Ansible modules/directives
-declare -a banned_keys=("become:" "shell:" "raw:")
+declare -a banned_keys=("shell:" "raw:")
 #
 echo "YAML linting started"
 for f in $(find . -name "*.yml"); do

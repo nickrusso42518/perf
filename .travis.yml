@@ -8,7 +8,8 @@ install:
 before_script:
   - "./tests/lint.sh"
   - "echo 'brkrst3310' >> ~/vault_pass_file.txt"
-  # - "ansible-playbook tests/unittest_playbook.yml"
+  - "ansible-playbook tests/build_hosts_playbook.yml"
+  - "ansible-playbook tests/unittest_playbook.yml"
 
 # Run the playbook with mock inputs to validate the perf tests.
 script:

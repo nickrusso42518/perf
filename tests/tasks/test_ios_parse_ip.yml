@@ -1,0 +1,24 @@
+---
+- name: "SYS >> Test invalid IPs for parsing"
+  assert:
+    that:
+      - "not None | ios_parse_ip"
+      - "not '' | ios_parse_ip"
+      - "not 'Internet address is 10.108.0.50/' | ios_parse_ip"
+      - "not 'Internet address is /32' | ios_parse_ip"
+      - "not 'Internet address is 10.108.0/32' | ios_parse_ip"
+      - "not 'Internet address is 10.108.0.2222/32' | ios_parse_ip"
+      - "not 'Internet address is 10.108.0.256/32' | ios_parse_ip"
+      - "not 'Internet address is 10.255.108.0.256/32' | ios_parse_ip"
+
+- name: "SYS >> Parse valid IP example"
+  set_fact:
+    IP_HASH: "{{ 'Internet address is 10.255.0.50/32' | ios_parse_ip }}"
+
+- name: "SYS >> Validate dict creation for parsed IP data"
+  assert:
+    that:
+      - "IP_HASH.address == '10.255.0.50'"
+      - "IP_HASH.subnet == 32"
+      - "IP_HASH.full_str == '10.255.0.50/32'"
+...
