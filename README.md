@@ -1,3 +1,7 @@
+[![Build Status](
+https://travis-ci.org/nickrusso42518/perf.svg?branch=master)](
+https://travis-ci.org/nickrusso42518/perf)
+
 # Performance Testers
 This series of playbooks accomplish a number of performance test
 tasks in the network. They are briefly described below, either each
@@ -23,8 +27,8 @@ state of the network are drawn and summarized in a synopsis for each target.
 Collected information is rolled up in a master CSV file for quick reference.
 Again, the length and composition of each CSV file differs between the 3 tests.
 
-> Contact information:
-> Email:    njrusmc@gmail.com
+> Contact information:\
+> Email:    njrusmc@gmail.com\
 > Twitter:  @nickrusso42518
 
   * [Supported platforms](#supported-platforms)

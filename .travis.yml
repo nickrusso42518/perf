@@ -1,0 +1,17 @@
+---
+# Install python packages for ansible and linters.
+install:
+  - "sudo pip install -r requirements.txt"
+
+# Execute linting and unit tests before running the main playbook.
+# If any of these tasks fail, the entire build fails immediately.
+before_script:
+  - "./tests/lint.sh"
+  - "echo 'brkrst3310' >> ~/vault_pass_file.txt"
+  # - "ansible-playbook tests/unittest_playbook.yml"
+
+# Run the playbook with mock inputs to validate the perf tests.
+script:
+  # - "ansible-playbook nots_playbook.yml -e 'ci_test=true'"
+  - "/bin/true"
+...

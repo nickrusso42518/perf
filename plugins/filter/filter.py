@@ -136,7 +136,7 @@ class FilterModule(object):
         strings at present though parsing them into ints/floats is
         an easy future enhancement.
         '''
-        # Regex patterns for ints, double-ints, triple-ints, and floats are constant
+        # Regex patterns for ints, 2-ints, 3-ints, and floats are constant
         re_int = r'\d+'
         re_int2 = r'(\d+)/(\d+)'
         re_int3 = r'(\d+)/(\d+)/(\d+)'
