@@ -1,0 +1,46 @@
+---
+- name: "SYS >> Define lightweight stats_hash"
+  set_fact:
+    good:
+      rtt_cnt: !!int 5
+    bad0:
+      rtt_cnt: !!int 0
+    bad1:
+      rtt_cnt: !!int -1
+
+- name: "SYS >> Test positive case"
+  assert:
+    that:
+      - "good | perf_synopsis('!!!!!', true, 4) == 'OK'"
+      - "good | perf_synopsis('!!.!!', true, 4) == 'OK'"
+      - "good | perf_synopsis('!!!!!', true, 5) == 'OK'"
+    msg: "positive case failure"
+
+- name: "SYS >> Test one failure"
+  assert:
+    that:
+      - "'Issues: IPSLA' in bad0 | perf_synopsis('!!!!!', true, 4)"
+      - "'Issues: IPSLA' in bad1 | perf_synopsis('!!!!!', true, 4)"
+      - "'Issues: MTU' in good | perf_synopsis('!!!!!', false, 4)"
+      - "'Issues: MPLS' in good | perf_synopsis('!.!.!', true, 4)"
+      - "'Issues: MPLS' in good | perf_synopsis('!!!L!!!!!', true, 10)"
+    msg: "single bad test failure"
+
+- name: "SYS >> Test two failures"
+  assert:
+    that:
+      - "'Issues: IPSLA' in bad0 | perf_synopsis('!!!!!', false, 4)"
+      - "'MTU' in bad0 | perf_synopsis('!!!!!', false, 4)"
+      - "'Issues: IPSLA' in bad1 | perf_synopsis('!!!!!', false, 4)"
+      - "'MTU' in bad1 | perf_synopsis('!!!!!', false, 4)"
+      - "not 'MPLS' in bad1 | perf_synopsis('!!!!!', false, 4)"
+      - "'Issues: IPSLA' in bad0 | perf_synopsis('..!!!', true, 4)"
+      - "'MPLS' in bad0 | perf_synopsis('!XX!!', true, 4)"
+      - "'Issues: IPSLA' in bad1 | perf_synopsis('!QQ!!', true, 4)"
+      - "'MPLS' in bad1 | perf_synopsis('!!ff!', true, 4)"
+      - "not 'MTU' in bad1 | perf_synopsis('!BB!!', true, 4)"
+      - "'Issues: MTU' in good | perf_synopsis('!!...', false, 3)"
+      - "'MPLS' in good | perf_synopsis('!!fff', false, 3)"
+      - "not 'IPSLA' in good | perf_synopsis('!!fBL', false, 3)"
+    msg: "double bad test failure"
+...
