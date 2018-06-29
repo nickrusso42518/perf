@@ -1,0 +1,130 @@
+---
+- name: "SYS >> Create structure data to convert to CSV (brief)"
+  set_fact:
+    brief_data:
+      rtt_cnt: 1
+      rtt_avg: 2
+      lat_cnt: 3
+      lat_sd_avg: 4
+      lat_ds_avg: 5
+      jit_sd_cnt: 6
+      jit_sd_avg: 7
+      jit_ds_cnt: 8
+      jit_ds_avg: 9
+      los_sd: 10
+      los_ds: 11
+      voc_mos: '12.23'
+
+- name: "SYS >> Perform conversion of data to CSV (brief)"
+  set_fact:
+    brief_csv: "{{ brief_data | ios_ipsla_csv }}"
+    brief_expected: "1,2,3,4,5,6,7,8,9,10,11,12.23"
+
+- name: "SYS >> Assert correct CSV was generated"
+  assert:
+    that: "brief_expected == brief_csv"
+    msg: "incorrect csv: {{ brief_expected }} -- {{ brief_csv }}"
+
+- name: "SYS >> Create structure data to convert to CSV (long)"
+  set_fact:
+    long_data:
+      rtt_cnt: 5
+      rtt_min: 6
+      rtt_avg: 7
+      rtt_max: 8
+      rtt_ovthr: 24
+      rtt_ovthp: 0
+      lat_cnt: 9
+      lat_sd_min: 10
+      lat_sd_avg: 11
+      lat_sd_max: 12
+      lat_ds_min: 13
+      lat_ds_avg: 14
+      lat_ds_max: 15
+      jit_sd_cnt: 16
+      jit_sd_min: 18
+      jit_sd_avg: 19
+      jit_sd_max: 20
+      jit_ds_cnt: 17
+      jit_ds_min: 21
+      jit_ds_avg: 22
+      jit_ds_max: 23
+      los_sd: 25
+      los_sd_per: 26
+      los_sd_pmin: 27
+      los_sd_pmax: 28
+      los_sd_imin: 29
+      los_sd_imax: 30
+      los_ds: 31
+      los_ds_per: 32
+      los_ds_pmin: 33
+      los_ds_pmax: 34
+      los_ds_imin: 35
+      los_ds_imax: 36
+      pkt_ooseq: 37
+      pkt_tdrop: 38
+      pkt_late: 39
+      pkt_skip: 40
+      voc_mos_min: '3.3'
+      voc_mos_max: '4.4'
+      voc_icpif_min: 1
+      voc_icpif_max: 2
+      voc_mos: -1
+      voc_icpif: -1
+
+- name: "SYS >> Perform conversion of data to CSV (long)"
+  set_fact:
+    long_csv: "{{ long_data | ios_ipsla_csv(false) }}"
+
+- name: "SYS >> Concatenate values to simplify testing"
+  set_fact:
+    expected: >-
+      {{
+      long_data.rtt_cnt ~ ',' ~
+      long_data.rtt_min ~ ',' ~
+      long_data.rtt_avg ~ ',' ~
+      long_data.rtt_max ~ ',' ~
+      long_data.rtt_ovthr ~ ',' ~
+      long_data.rtt_ovthp ~ ',' ~
+      long_data.lat_cnt ~ ',' ~
+      long_data.lat_sd_min ~ ',' ~
+      long_data.lat_sd_avg ~ ',' ~
+      long_data.lat_sd_max ~ ',' ~
+      long_data.lat_ds_min ~ ',' ~
+      long_data.lat_ds_avg ~ ',' ~
+      long_data.lat_ds_max ~ ',' ~
+      long_data.jit_sd_cnt ~ ',' ~
+      long_data.jit_sd_min ~ ',' ~
+      long_data.jit_sd_avg ~ ',' ~
+      long_data.jit_sd_max ~ ',' ~
+      long_data.jit_ds_cnt ~ ',' ~
+      long_data.jit_ds_min ~ ',' ~
+      long_data.jit_ds_avg ~ ',' ~
+      long_data.jit_ds_max ~ ',' ~
+      long_data.los_sd ~ ',' ~
+      long_data.los_sd_per ~ ',' ~
+      long_data.los_sd_pmin ~ ',' ~
+      long_data.los_sd_pmax ~ ',' ~
+      long_data.los_sd_imin ~ ',' ~
+      long_data.los_sd_imax ~ ',' ~
+      long_data.los_ds ~ ',' ~
+      long_data.los_ds_per ~ ',' ~
+      long_data.los_ds_pmin ~ ',' ~
+      long_data.los_ds_pmax ~ ',' ~
+      long_data.los_ds_imin ~ ',' ~
+      long_data.los_ds_imax ~ ',' ~
+      long_data.pkt_ooseq ~ ',' ~
+      long_data.pkt_tdrop ~ ',' ~
+      long_data.pkt_late ~ ',' ~
+      long_data.pkt_skip ~ ',' ~
+      long_data.voc_mos_min ~ ',' ~
+      long_data.voc_mos_max ~ ',' ~
+      long_data.voc_icpif_min ~ ',' ~
+      long_data.voc_icpif_max
+      }}
+
+- name: "SYS >> Assert correct CSV was generated"
+  assert:
+    that: "expected == long_csv"
+    msg: "incorrect csv: {{ expected }} -- {{ long_csv }}"
+...
