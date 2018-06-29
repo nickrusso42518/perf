@@ -1,0 +1,45 @@
+---
+- name: "SYS >> Assert basic pass/fail ping stats"
+  assert:
+    that:
+      - >-
+        'Success rate is 100 percent (5/5), round-trip min/avg/max
+        = 247/247/248 ms' | ios_ping_stats
+      - >-
+        'Success rate is 100 percent (5/5), round-trip min/avg/max
+        = 247/247/247 ms' | ios_ping_stats
+      - >-
+        not 'Success rate is 100 percent (5/5), round-trip min/avg/max
+        = 248/247/248 ms' | ios_ping_stats
+      - >-
+        not 'Success rate is 100 percent (5/5), round-trip min/avg/max
+        = 247/247/246 ms' | ios_ping_stats
+      - >-
+        not 'Success rate is 100 percent (5/5), round-trip min/avg/max
+        = 247/247/x ms' | ios_ping_stats
+      - "'Success rate is 0 percent (0/5)' | ios_ping_stats"
+      - "not 'Success rate is 0 percent (0/)' | ios_ping_stats"
+      - "not 'Success rate is 0 percent (/0)' | ios_ping_stats"
+      - "not 'Success rate is 101 percent (0/0)' | ios_ping_stats"
+      - "not 'Success rate is 0 percent (1/0)' | ios_ping_stats"
+
+- name: "SYS >> Capture detailed ping results"
+  set_fact:
+    d1: >-
+      {{ 'Success rate is 100 percent (4/5), round-trip min/avg/max
+      = 246/247/248 ms' | ios_ping_stats }}
+    d2: "{{ 'Success rate is 1 percent (0/5)' | ios_ping_stats }}"
+
+- name: "SYS >> Validate detailed ping results"
+  assert:
+    that:
+      - "d1.rtt_min == 246"
+      - "d1.rtt_avg == 247"
+      - "d1.rtt_max == 248"
+      - "d1.pkt_per == 100"
+      - "d1.pkt_cmp == 4"
+      - "d1.pkt_tot == 5"
+      - "d2.pkt_per == 1"
+      - "d2.pkt_cmp == 0"
+      - "d2.pkt_tot == 5"
+...
