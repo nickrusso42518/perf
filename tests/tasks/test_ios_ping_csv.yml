@@ -1,0 +1,19 @@
+---
+- name: "SYS >> Build structured data for conversion to CSV"
+  set_fact:
+    data:
+      pkt_per: 1
+      pkt_cmp: 2
+      pkt_tot: 3
+      rtt_min: 4
+      rtt_avg: 5
+      rtt_max: 6
+
+- name: "SYS >> Perform parsing into CSV string"
+  set_fact:
+    csv: "{{ data | ios_ping_csv }}"
+
+- name: "SYS >> Assert correct CSV format"
+  assert:
+    that: "'1,2,3,4,5,6' == csv"
+...
