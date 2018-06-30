@@ -11,8 +11,8 @@ before_script:
   - "ansible-playbook tests/build_hosts_playbook.yml"
   - "ansible-playbook tests/unittest_playbook.yml"
 
-# Run the playbook with mock inputs to validate the perf tests.
+# Perform some limited role testing until a better strategy for detailed
+# playbook testing can be developed.
 script:
-  # - "ansible-playbook nots_playbook.yml -e 'ci_test=true'"
-  - "/bin/true"
+  - "ansible-playbook roles/dtg/tests/test.yml -i roles/dtg/tests/inventory.yml"
 ...
