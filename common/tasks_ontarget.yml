@@ -13,7 +13,6 @@
     # determine which targets are on the network.
     - name: "IOS >> Capture host routes in IOS FIB"
       ios_command:
-        provider: "{{ login_creds }}"
         commands: "show ip cef | include /32"
       register: IOS_FIB
 

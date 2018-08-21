@@ -1,7 +1,6 @@
 ---
 - name: "IOS >> Get device NTP status"
   ios_command:
-    provider: "{{ login_creds }}"
     commands: "show ntp status"
   register: NTP_STATUS
 ...

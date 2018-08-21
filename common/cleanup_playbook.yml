@@ -3,6 +3,7 @@
 # is complete. All performance tests rely on this playbook.
 - name: "Refine collected data locally"
   hosts: localhost
+  connection: local
   tasks:
     # Since this task list relies on variables expected to be defined
     # in previous tasks, validate this is the case. It should never

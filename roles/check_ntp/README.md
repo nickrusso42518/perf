@@ -10,7 +10,7 @@ This role can be applied to one of three types of hosts:
   * Physical Cisco IOS and IOS-XE devices (routers, switches, etc.)
   * Virtual Cisco IOS and IOS-XE devices (CSR1000v, etc.)
 
-Each host included must device a host variable called `DEVICE_TYPE`
+Each host included must device a host variable called `ansible_network_os`
 which must be one of the following:
   * `ios`: For any IOS or IOS-XE device
   * `asa_single`: For any single context ASA
@@ -26,6 +26,6 @@ a new system that is known to not be synchronized.
 ## Role tasks (summarized)
 The action of communicating with a network device to pull NTP status is
 abstracted into a separate tasks file. The naming of the files will exactly
-match the `DEVICE_TYPE` defined earlier, except prepended with `tasks_` and
-appended with `.yml`. This is dynamically included at runtime based on the
+match the `ansible_network_os` defined earlier, except prepended with `tasks_`
+and appended with `.yml`. This is dynamically included at runtime based on the
 type of device being verified.

@@ -1,6 +1,7 @@
 ---
 # Include the date/time stamp on localhost for reference later.
 - hosts: localhost
+  connection: local
   tasks:
     - include_role:
         name: dtg
@@ -10,8 +11,6 @@
 # and writes them to CSV files for examination.
 - name: "Retrieve aggregated stats from existing probes"
   hosts: perf_routers
-  vars_files:
-    - "login_creds.vault"
   tasks:
 
     # Include the setup tasks and do not check NTP while there.
@@ -25,7 +24,6 @@
     # this in a list of dictionaries.
     - name: "IOS >> Gather IP SLA aggregated stats"
       ios_command:
-        provider: "{{ login_creds }}"
         commands: "show ip sla statistics aggregated {{ item.0.id }}"
       register: PROBE_OUTPUT
       when: "item.1.ipv4addr != LB0.address"

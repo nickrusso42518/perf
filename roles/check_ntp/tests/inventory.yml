@@ -3,7 +3,8 @@ all:
   children:
     ci_routers:  # Cisco CSR1000v
       vars:
-        DEVICE_TYPE: "ios"
+        ansible_network_os: "ios"
+        ansible_connection: "network_cli"
       hosts:
         test1:
 ...

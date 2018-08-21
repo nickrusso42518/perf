@@ -1,19 +1,10 @@
 ---
 - hosts: ci_routers
-  vars:
-    login_creds:
-      host: "{{ ansible_host }}"
-      username: ansible_ci
-      password: ansible_ci
   tasks:
     - name: "SYS >> Ensure LB0 is undefined"
       assert:
         that:
           - "not LB0 is defined"
-
-    - name: "DEBUG >> Print surrogate credentials"
-      debug:
-        var: login_creds
 
     - include_role:
         name: get_lb0

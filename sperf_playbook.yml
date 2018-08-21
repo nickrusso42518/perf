@@ -1,5 +1,6 @@
 ---
 - hosts: localhost
+  connection: local
   tasks:
     - include_role:
         name: dtg
@@ -9,8 +10,6 @@
 # for rapid feedback.
 - name: "Perform short performance test on network"
   hosts: perf_routers
-  vars_files:
-    - "login_creds.vault"
   tasks:
     # Include the setup tasks and do not check NTP while there.
     - include_tasks: "common/tasks_setup.yml"
@@ -38,7 +37,6 @@
     # and simple without much user interaction.
     - name: "IOS >> Send ICMP probes to targets"
       ios_command:
-        provider: "{{ login_creds }}"
         commands:
           - "ping {{ item.ipv4addr }} source {{ LB0.address }} time 1 tos 160"
       when: "item.ipv4addr != LB0.address"

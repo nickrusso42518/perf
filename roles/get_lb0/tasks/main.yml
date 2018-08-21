@@ -1,9 +1,7 @@
 ---
 - name: "IOS >> Get Loopback0 IPv4 address and netmask"
   ios_command:
-    provider: "{{ login_creds }}"
-    commands:
-      - "show ip interface Loopback0 | include Internet_address"
+    commands: "show ip interface Loopback0 | include Internet_address"
   register: IOS_LB0
 
 - name: "SYS >> Parse Loopback0 IPv4 address and netmask"

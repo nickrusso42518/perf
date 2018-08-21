@@ -1,11 +1,6 @@
 ---
 - name: "Test 'check_ntp' role on IOS routers"
   hosts: ci_routers
-  vars:
-    ci_creds:
-      host: "{{ inventory_hostname }}"
-      username: ansible_ci
-      password: ansible_ci
   tasks:
     - name: "SYS >> Ensure 'NTP_STATUS' and 'synchronized' are undefined"
       assert:
@@ -19,7 +14,6 @@
 
     - name: "IOS >> Configure NTP master"
       ios_config:
-        provider: "{{ ci_creds }}"
         commands: "ntp master"
 
     - name: "SYS >> Wait for NTP to sync on device"
@@ -36,7 +30,6 @@
 
     - name: "IOS >> De-configure NTP master"
       ios_config:
-        provider: "{{ ci_creds }}"
         commands: "no ntp master"
 
     - name: "SYS >> Wait for NTP to unsync on device"

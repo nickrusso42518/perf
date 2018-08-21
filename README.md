@@ -145,7 +145,6 @@ be the same.
 
 ```
 ---
-DEVICE_TYPE: ios
 state: present
 time_hrs: 1
 repeat: 10

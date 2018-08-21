@@ -1,6 +1,7 @@
 ---
 # Include the date/time stamp on localhost for reference later.
 - hosts: localhost
+  connection: local
   tasks:
     - include_role:
         name: dtg
@@ -10,8 +11,6 @@
 # occasionally.
 - name: "Configure long-term IP SLA probes"
   hosts: perf_routers
-  vars_files:
-    - "login_creds.vault"
   tasks:
 
     # Ensure that state is present (adding new probes), absent (removing
@@ -70,7 +69,6 @@
     # checking the running configuration.
     - name: "IOS >> Gather IOS IP SLA probes"
       ios_command:
-        provider: "{{ login_creds }}"
         commands: "show running-config | include ^ip sla [0-9]+$"
       register: IOS_PROBES
 
@@ -85,7 +83,6 @@
     # PER and start the IP SLA probe.
     - name: "IOS >> Configure IP SLA probes, state: {{ state }}"
       ios_config:
-        provider: "{{ login_creds }}"
         src: "templates/lperf_put.j2"
         match: none
 ...

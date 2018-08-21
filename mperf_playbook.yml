@@ -1,6 +1,7 @@
 ---
 # Include the date/time stamp on localhost for reference later.
 - hosts: localhost
+  connection: local
   tasks:
     - include_role:
         name: dtg
@@ -10,8 +11,6 @@
 # for rapid feedback.
 - name: "Perform midterm performance test on network"
   hosts: perf_routers
-  vars_files:
-    - "login_creds.vault"
   tasks:
 
     # Perform basic error checking to ensure the repeat count
@@ -37,7 +36,6 @@
     #   3. MPLS LSPV probe to test label switch path health
     - name: "IOS >> Send UDP-jitter, ICMP, and LSPV probes to targets"
       ios_command:
-        provider: "{{ login_creds }}"
         commands:
           - >
               ip sla udp-jitter {{ item.ipv4addr }} 16384 source-ip
