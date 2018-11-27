@@ -3,22 +3,22 @@ https://travis-ci.org/nickrusso42518/perf.svg?branch=master)](
 https://travis-ci.org/nickrusso42518/perf)
 
 # Performance Testers
-This series of playbooks accomplish a number of performance test
-tasks in the network. They are briefly described below, either each
+This series of playbooks accomplishes a number of performance test
+tasks in the network. They are briefly described below, with each
 one becoming more time consuming and comprehensive than the one before it.
 
-  * `sperf`: Short-term performance test builds a matrix of average
+  * `sperf`: Short-term performance test that builds a matrix of average
     RTT times. This is suitable for general public distribution. Unlike
     other tests, the number of columns is dynamic based on the target
     list.
 
-  * `mperf`: Mid-term performance test builds a matrix of data from
+  * `mperf`: Mid-term performance test that builds a matrix of data from
     many subcomponents, listed below. It is provided to engineers only.
     * IP SLA udp-jitter to capture detailed performance metrics
     * ICMP ping to probe for MTU/fragmentation problems
     * MPLS ping (LSPV) to test MPLS label switch path health
 
-  * `lperf`: Long-term performance test focuses on detailed performance
+  * `lperf`: Long-term performance test that focuses on detailed performance
     data collected over hours. It is provided in support of sustained
     efforts or as proof to your SP that they are not meeting their SLAs.
 
@@ -46,18 +46,20 @@ playbooks require basic ICMP `ping` functionality, which all Cisco IOS
 routers support.
 
 Testing was conducted on the following platforms and versions:
+  
   * Cisco CSR1000v, version 16.07.01a, running in AWS
 
 ## Hosts
 All Cisco IOS MPLS routers in the `perf_routers` group are in scope. Normally,
 the playbook runs what is effectively a full IP/MPLS reachability test in the
 global table. For a more rapid test, you can modify the `targets` list to
-include only some routers, while also changing the hosts in scope. These
-combination approaches are also supported. For example, maybe logging into
+include only some routers, while also changing the hosts in scope. A
+combination of approaches are also supported. For example, maybe logging into
 one router per region then targeting 2 routers in every other region
 provides a sufficient picture of the current network performance.
 
 The following are __REQUIRED__ for this playbooks to work:
+
   * All routers must be in a group containing the string `"region"`
   * All routers must be in exactly one of these regional groups
   * All regional groups must be children of `perf_routers`
@@ -105,8 +107,8 @@ regional_sla:
 ```
 
 ## Variables
-These playbooks rely only on `group_vars` which are defined for the general
-router group. The main variable is a sequence called `targets` which lists the
+These playbooks rely only on `group_vars` that are defined for the general
+router group. The main variable is a sequence called `targets` that lists the
 __global__ hostname of any remote host. Nodes not yet activated/configured
 should still be added to the list; the playbook has the intelligence to
 only consider "online" targets based on /32 FIB entries present.
@@ -126,8 +128,8 @@ any results, which is a shortcoming of the IP SLA feature when invoked
 from the exec shell.__
 
 The `state` variable is only relevant for long-term probes since the
-`lperf_put` playbook will add or remove them, depending. The time
-is the amount of time the probe should run and must be between 1-24.
+`lperf_put` playbook will add or remove them, depending. The `time_hrs` 
+variable is the number of hours the probe should run and must be between 1-24.
 The state can be `present`, `absent`, or `restarted` only.
 Only the most recent complete hour of statistics is available
 when long-term performance metrics are retrieved. This is a limitation
@@ -158,6 +160,7 @@ targets:
 
 Finally, there is a common variable called `scp` to assist with copying
 rollups off the control machine onto an SCP server:
+
   * `user`: The SCP username that can write files to the SCP server.
   * `host`: The SCP server FQDN/IP address. Under its root directory, a
     directory called `perf/` should be created. This is where the archives
@@ -174,7 +177,7 @@ found in the `plugins/filter/filter.py` file.
 __The templates should not be changed at the operator level.__
 
 ## LSPV Codes
-The table below provides the LSPV codes which may appear in the `mperf`
+The table below provides the LSPV codes that may appear in the `mperf`
 sheets when testing MPLS reachability.
 
 ```
