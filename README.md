@@ -46,7 +46,7 @@ playbooks require basic ICMP `ping` functionality, which all Cisco IOS
 routers support.
 
 Testing was conducted on the following platforms and versions:
-  
+
   * Cisco CSR1000v, version 16.07.01a, running in AWS
 
 ## Hosts
@@ -128,7 +128,7 @@ any results, which is a shortcoming of the IP SLA feature when invoked
 from the exec shell.__
 
 The `state` variable is only relevant for long-term probes since the
-`lperf_put` playbook will add or remove them, depending. The `time_hrs` 
+`lperf_put` playbook will add or remove them, depending. The `time_hrs`
 variable is the number of hours the probe should run and must be between 1-24.
 The state can be `present`, `absent`, or `restarted` only.
 Only the most recent complete hour of statistics is available
