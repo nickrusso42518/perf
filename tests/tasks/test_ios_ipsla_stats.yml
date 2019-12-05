@@ -47,7 +47,6 @@
 - name: "SYS >> Validate output for single-run"
   assert:
     that:
-      - "STATS_ONE_HASH"
       - "STATS_ONE_HASH.rtt_cnt       == 0"
       - "STATS_ONE_HASH.rtt_min       == 1"
       - "STATS_ONE_HASH.rtt_avg       == 2"
@@ -142,7 +141,6 @@
 - name: "SYS >> Validate output for multi-run"
   assert:
     that:
-      - "STATS_AGG_HASH"
       - "STATS_AGG_HASH.rtt_cnt       == 5"
       - "STATS_AGG_HASH.rtt_min       == 6"
       - "STATS_AGG_HASH.rtt_avg       == 7"

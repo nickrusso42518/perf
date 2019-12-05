@@ -1,11 +1,11 @@
 ---
-language: python
+language: "python"
 python:
-  - "2.7"
+  - "3.7"
 
 # In order to run privileged shell commands for hostname resolution,
 # travis must have root privileges.
-sudo: required
+sudo: "required"
 
 # Install python packages for ansible and linters.
 install:
@@ -14,7 +14,10 @@ install:
 # Execute linting and unit tests before running the main playbook.
 # If any of these tasks fail, the entire build fails immediately.
 before_script:
-  - "./tests/lint.sh"
+  - "find . -name '*.yml' | xargs yamllint -s"
+  - "find . -name '*.py' | xargs pylint"
+  - "find . -name '*.py' | xargs black -l 80 --check"
+  - "find . -name '*.py' | xargs bandit"
   - "echo 'brkrst3310' >> ~/vault_pass_file.txt"
   - "ansible-playbook tests/build_hosts_playbook.yml"
   - "ansible-playbook tests/unittest_playbook.yml"

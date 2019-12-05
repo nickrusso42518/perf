@@ -1,40 +1,42 @@
-#!/usr/bin/python
-'''
+#!/usr/bin/env python
+
+"""
 Author: Nick Russo <njrusmc@gmail.com>
 
 File contains custom filters for use in Ansible playbooks.
 https://www.ansible.com/
-'''
+"""
 
-from __future__ import print_function
 import re
 import socket
+
+
 class FilterModule(object):
-    '''
+    """
     Defines a filter module object.
-    '''
+    """
 
     @staticmethod
     def filters():
-        '''
+        """
         Return a list of hashes where the key is the filter
         name exposed to playbooks and the value is the function.
-        '''
+        """
         return {
-            'resolve': FilterModule.resolve,
-            'ios_ipsla_stats': FilterModule.ios_ipsla_stats,
-            'ios_ipsla_csv': FilterModule.ios_ipsla_csv,
-            'ios_ping_stats': FilterModule.ios_ping_stats,
-            'ios_ping_csv': FilterModule.ios_ping_csv,
-            'intersect_block': FilterModule.intersect_block,
-            'ios_parse_ip': FilterModule.ios_parse_ip,
-            'perf_synopsis': FilterModule.perf_synopsis,
-            'get_sla': FilterModule.get_sla
+            "resolve": FilterModule.resolve,
+            "ios_ipsla_stats": FilterModule.ios_ipsla_stats,
+            "ios_ipsla_csv": FilterModule.ios_ipsla_csv,
+            "ios_ping_stats": FilterModule.ios_ping_stats,
+            "ios_ping_csv": FilterModule.ios_ping_csv,
+            "intersect_block": FilterModule.intersect_block,
+            "ios_parse_ip": FilterModule.ios_parse_ip,
+            "perf_synopsis": FilterModule.perf_synopsis,
+            "get_sla": FilterModule.get_sla,
         }
 
     @staticmethod
     def intersect_block(text, cp_hash_list):
-        '''
+        """
         This filter takes a block of text and a list of Cisco
         ping hashes. Each ipv4addr within the hash list is checked
         for presence within the block of text. This is useful for
@@ -45,25 +47,24 @@ class FilterModule(object):
         within the text block. The filter returns false only if
         there is a logic error whereby the subset is greater than
         the original parameter in length, which should be impossible.
-        '''
+        """
         intersect_list = []
         for d in cp_hash_list:
-            if d['ipv4addr'] in text:
+            if d["ipv4addr"] in text:
                 intersect_list.append(d)
         # Sanity check; new list cannot be longer than original
         if len(intersect_list) > len(cp_hash_list):
             return False
         return intersect_list
 
-
     @staticmethod
     def _try_int(val, base=10):
-        '''
+        """
         Trivial integer parser that tries to extract an integer
         (base 10 by default) from a string. If it fails, the function
         returns the original input unmodified, as would be the case
         if the input were a string or float, for example.
-        '''
+        """
         try:
             return int(val, base)
         except ValueError:
@@ -72,7 +73,7 @@ class FilterModule(object):
 
     @staticmethod
     def resolve(key):
-        '''
+        """
         Given an IPv4 or hostname as input (key), the other value can
         be discovered. When the key is a string, the return type is
         a single hash with the original key, ipv4 addr, and hostname
@@ -83,12 +84,12 @@ class FilterModule(object):
         is False. If any errors are raised when resolving a given
         key, False is populated into the hostname and ipv4addr fields.
         Only the 'hosts' database can be used; this simplifies security.
-        '''
+        """
         # print("resolve key is {0}".format(key))
 
         if isinstance(key, list):
             return FilterModule._resolve_list(key)
-        elif isinstance(key, basestring):
+        if isinstance(key, str):
             return FilterModule._resolve_host(key)
 
         # Some invalid value
@@ -97,9 +98,9 @@ class FilterModule(object):
 
     @staticmethod
     def _resolve_host(key):
-        '''
+        """
         Resolves a single host given a key and database.
-        '''
+        """
 
         try:
             # Resolve the IPv4 address and hostname from the key
@@ -110,15 +111,15 @@ class FilterModule(object):
             d = {"key": key, "hostname": new_host, "ipv4addr": new_ipv4}
         except (socket.gaierror, socket.herror, TypeError):
             # need to add 'as ex' when uncommenting line below
-            #print("Error for key '{0}': rc={1}".format(key, ex.returncode))
+            # print("Error for key '{0}': rc={1}".format(key, ex.returncode))
             d = {"key": key, "hostname": False, "ipv4addr": False}
         return d
 
     @staticmethod
     def _resolve_list(key_list):
-        '''
+        """
         Resolves a list of hosts given a list of keys and a database.
-        '''
+        """
         d_list = []
         for key in key_list:
             d = FilterModule._resolve_host(key)
@@ -127,7 +128,7 @@ class FilterModule(object):
 
     @staticmethod
     def ios_ipsla_stats(text):
-        '''
+        """
         This filter parses through the relevant information from an
         exec-issued "ip sla udp-jitter" probe. This is useful for quickly
         collecting detailed statistics about the network performance. The
@@ -135,81 +136,81 @@ class FilterModule(object):
         containing values of the parsed information. The values are all
         strings at present though parsing them into ints/floats is
         an easy future enhancement.
-        '''
+        """
         # Regex patterns for ints, 2-ints, 3-ints, and floats are constant
-        re_int = r'\d+'
-        re_int2 = r'(\d+)/(\d+)'
-        re_int3 = r'(\d+)/(\d+)/(\d+)'
-        re_float = r'\d+\.\d+'
+        re_int = r"\d+"
+        re_int2 = r"(\d+)/(\d+)"
+        re_int3 = r"(\d+)/(\d+)/(\d+)"
+        re_float = r"\d+\.\d+"
 
         # List of lookahead regexs to extract numbers
         re_list = [
-            r'(?<=Number Of RTT: )' + re_int,
-            r'(?<=RTT Min/Avg/Max: )' + re_int3,
-            r'(?<=Number of Latency one-way Samples: )' + re_int,
-            r'(?<=Destination Latency one way Min/Avg/Max: )' + re_int3,
-            r'(?<=Source Latency one way Min/Avg/Max: )' + re_int3,
-            r'(?<=Number of SD Jitter Samples: )' + re_int,
-            r'(?<=Source to Destination Jitter Min/Avg/Max: )' + re_int3,
-            r'(?<=Number of DS Jitter Samples: )' + re_int,
-            r'(?<=Destination to Source Jitter Min/Avg/Max: )' + re_int3,
-            r'(?<=Number Of RTT Over Threshold: )(\d+) \((\d+)%\)',
-            r'(?<=Loss Source to Destination: )' + re_int,
-            r'(?<=Destination Loss Periods Number: )' + re_int,
-            r'(?<=Destination Loss Period Length Min/Max: )' + re_int2,
-            r'(?<=Destination Inter Loss Period Length Min/Max: )' + re_int2,
-            r'(?<=Loss Destination to Source: )' + re_int,
-            r'(?<=Source Loss Periods Number: )' + re_int,
-            r'(?<=Source Loss Period Length Min/Max: )' + re_int2,
-            r'(?<=Source Inter Loss Period Length Min/Max: )' + re_int2,
-            r'(?<=Out Of Sequence: )' + re_int,
-            r'(?<=Tail Drop: )' + re_int,
-            r'(?<=Packet Late Arrival: )' + re_int,
-            r'(?<=Packet Skipped: )' + re_int,
-            r'(?<=Planning Impairment Factor \(ICPIF\): )' + re_int,
-            r'(?<=MOS score: )' + re_float,
-            r'(?<=MinOfMOS: )' + re_float,
-            r'(?<=MaxOfMOS: )' + re_float,
-            r'(?<=MinOfICPIF: )' + re_int,
-            r'(?<=MaxOfICPIF: )' + re_int
+            r"(?<=Number Of RTT: )" + re_int,
+            r"(?<=RTT Min/Avg/Max: )" + re_int3,
+            r"(?<=Number of Latency one-way Samples: )" + re_int,
+            r"(?<=Destination Latency one way Min/Avg/Max: )" + re_int3,
+            r"(?<=Source Latency one way Min/Avg/Max: )" + re_int3,
+            r"(?<=Number of SD Jitter Samples: )" + re_int,
+            r"(?<=Source to Destination Jitter Min/Avg/Max: )" + re_int3,
+            r"(?<=Number of DS Jitter Samples: )" + re_int,
+            r"(?<=Destination to Source Jitter Min/Avg/Max: )" + re_int3,
+            r"(?<=Number Of RTT Over Threshold: )(\d+) \((\d+)%\)",
+            r"(?<=Loss Source to Destination: )" + re_int,
+            r"(?<=Destination Loss Periods Number: )" + re_int,
+            r"(?<=Destination Loss Period Length Min/Max: )" + re_int2,
+            r"(?<=Destination Inter Loss Period Length Min/Max: )" + re_int2,
+            r"(?<=Loss Destination to Source: )" + re_int,
+            r"(?<=Source Loss Periods Number: )" + re_int,
+            r"(?<=Source Loss Period Length Min/Max: )" + re_int2,
+            r"(?<=Source Inter Loss Period Length Min/Max: )" + re_int2,
+            r"(?<=Out Of Sequence: )" + re_int,
+            r"(?<=Tail Drop: )" + re_int,
+            r"(?<=Packet Late Arrival: )" + re_int,
+            r"(?<=Packet Skipped: )" + re_int,
+            r"(?<=Planning Impairment Factor \(ICPIF\): )" + re_int,
+            r"(?<=MOS score: )" + re_float,
+            r"(?<=MinOfMOS: )" + re_float,
+            r"(?<=MaxOfMOS: )" + re_float,
+            r"(?<=MinOfICPIF: )" + re_int,
+            r"(?<=MaxOfICPIF: )" + re_int,
         ]
 
         # List of key names for the returned hash
         # Values must be strings or lists of strings
         key_list = [
-            'rtt_cnt',
-            ['rtt_min', 'rtt_avg', 'rtt_max'],
-            'lat_cnt',
-            ['lat_sd_min', 'lat_sd_avg', 'lat_sd_max'],
-            ['lat_ds_min', 'lat_ds_avg', 'lat_ds_max'],
-            'jit_sd_cnt',
-            ['jit_sd_min', 'jit_sd_avg', 'jit_sd_max'],
-            'jit_ds_cnt',
-            ['jit_ds_min', 'jit_ds_avg', 'jit_ds_max'],
-            ['rtt_ovthr', 'rtt_ovthp'],
-            'los_sd',
-            'los_sd_per',
-            ['los_sd_pmin', 'los_sd_pmax'],
-            ['los_sd_imin', 'los_sd_imax'],
-            'los_ds',
-            'los_ds_per',
-            ['los_ds_pmin', 'los_ds_pmax'],
-            ['los_ds_imin', 'los_ds_imax'],
-            'pkt_ooseq',
-            'pkt_tdrop',
-            'pkt_late',
-            'pkt_skip',
-            'voc_icpif',
-            'voc_mos',
-            'voc_mos_min',
-            'voc_mos_max',
-            'voc_icpif_min',
-            'voc_icpif_max'
+            "rtt_cnt",
+            ["rtt_min", "rtt_avg", "rtt_max"],
+            "lat_cnt",
+            ["lat_sd_min", "lat_sd_avg", "lat_sd_max"],
+            ["lat_ds_min", "lat_ds_avg", "lat_ds_max"],
+            "jit_sd_cnt",
+            ["jit_sd_min", "jit_sd_avg", "jit_sd_max"],
+            "jit_ds_cnt",
+            ["jit_ds_min", "jit_ds_avg", "jit_ds_max"],
+            ["rtt_ovthr", "rtt_ovthp"],
+            "los_sd",
+            "los_sd_per",
+            ["los_sd_pmin", "los_sd_pmax"],
+            ["los_sd_imin", "los_sd_imax"],
+            "los_ds",
+            "los_ds_per",
+            ["los_ds_pmin", "los_ds_pmax"],
+            ["los_ds_imin", "los_ds_imax"],
+            "pkt_ooseq",
+            "pkt_tdrop",
+            "pkt_late",
+            "pkt_skip",
+            "voc_icpif",
+            "voc_mos",
+            "voc_mos_min",
+            "voc_mos_max",
+            "voc_icpif_min",
+            "voc_icpif_max",
         ]
 
         # Ensure the two lists have the same length
         if len(key_list) != len(re_list):
-            raise ValueError('lists not same length')
+            raise ValueError("lists not same length")
 
         # Initialize the hash to return
         stats_hash = {}
@@ -229,7 +230,7 @@ class FilterModule(object):
                             val = FilterModule._try_int(re_search.group(i))
                         else:
                             val = -1
-                        #print("adding k:v :: {0}:{1}".format(sub_key,val))
+                        # print("adding k:v :: {0}:{1}".format(sub_key,val))
                         stats_hash.update({sub_key: val})
 
             # For strings, parse the single value
@@ -240,7 +241,7 @@ class FilterModule(object):
                     val = FilterModule._try_int(re_search.group())
                 else:
                     val = -1
-                #print("adding k:v {0}:{1}".format(key,val))
+                # print("adding k:v {0}:{1}".format(key,val))
                 stats_hash.update({key: val})
             # For invalid data types, do nothing, and loop again
 
@@ -249,11 +250,11 @@ class FilterModule(object):
 
     @staticmethod
     def ios_ipsla_csv(stats_hash, brief=True):
-        '''
+        """
         This filter converts a stats_hash (generated by the ios_ipsla_stats
         filter) and writes it to a CSV string. This is useful for printing
         to spreadsheet rollups which contain the output from many probes.
-        '''
+        """
 
         # Ensure input is a dict before continuing
         if not isinstance(stats_hash, dict):
@@ -263,60 +264,93 @@ class FilterModule(object):
         # ... varies depending on verbosity needed
         if brief:
             key_sequence = [
-                'rtt_cnt', 'rtt_avg',
-                'lat_cnt', 'lat_sd_avg', 'lat_ds_avg',
-                'jit_sd_cnt', 'jit_sd_avg',
-                'jit_ds_cnt', 'jit_ds_avg',
-                'los_sd', 'los_ds',
-                'voc_mos'
+                "rtt_cnt",
+                "rtt_avg",
+                "lat_cnt",
+                "lat_sd_avg",
+                "lat_ds_avg",
+                "jit_sd_cnt",
+                "jit_sd_avg",
+                "jit_ds_cnt",
+                "jit_ds_avg",
+                "los_sd",
+                "los_ds",
+                "voc_mos",
             ]
 
         else:
             key_sequence = [
-                'rtt_cnt', 'rtt_min', 'rtt_avg', 'rtt_max',
-                'rtt_ovthr', 'rtt_ovthp',
-                'lat_cnt', 'lat_sd_min', 'lat_sd_avg', 'lat_sd_max',
-                'lat_ds_min', 'lat_ds_avg', 'lat_ds_max',
-                'jit_sd_cnt', 'jit_sd_min', 'jit_sd_avg', 'jit_sd_max',
-                'jit_ds_cnt', 'jit_ds_min', 'jit_ds_avg', 'jit_ds_max',
-                'los_sd', 'los_sd_per', 'los_sd_pmin', 'los_sd_pmax',
-                'los_sd_imin', 'los_sd_imax',
-                'los_ds', 'los_ds_per', 'los_ds_pmin', 'los_ds_pmax',
-                'los_ds_imin', 'los_ds_imax',
-                'pkt_ooseq', 'pkt_tdrop', 'pkt_late', 'pkt_skip',
-                'voc_mos_min', 'voc_mos_max',
-                'voc_icpif_min', 'voc_icpif_max'
+                "rtt_cnt",
+                "rtt_min",
+                "rtt_avg",
+                "rtt_max",
+                "rtt_ovthr",
+                "rtt_ovthp",
+                "lat_cnt",
+                "lat_sd_min",
+                "lat_sd_avg",
+                "lat_sd_max",
+                "lat_ds_min",
+                "lat_ds_avg",
+                "lat_ds_max",
+                "jit_sd_cnt",
+                "jit_sd_min",
+                "jit_sd_avg",
+                "jit_sd_max",
+                "jit_ds_cnt",
+                "jit_ds_min",
+                "jit_ds_avg",
+                "jit_ds_max",
+                "los_sd",
+                "los_sd_per",
+                "los_sd_pmin",
+                "los_sd_pmax",
+                "los_sd_imin",
+                "los_sd_imax",
+                "los_ds",
+                "los_ds_per",
+                "los_ds_pmin",
+                "los_ds_pmax",
+                "los_ds_imin",
+                "los_ds_imax",
+                "pkt_ooseq",
+                "pkt_tdrop",
+                "pkt_late",
+                "pkt_skip",
+                "voc_mos_min",
+                "voc_mos_max",
+                "voc_icpif_min",
+                "voc_icpif_max",
             ]
 
         # Write values to the string in sequence
-        csv_str = ''
+        csv_str = ""
         for key in key_sequence:
-            csv_str += str(stats_hash[key]) + ','
+            csv_str += str(stats_hash[key]) + ","
 
         # Trim the trailing comma and return the CSV string
         return csv_str[:-1]
 
     @staticmethod
-    def perf_synopsis(stats_hash, lspv_str="",
-                      mtu_ok=False, lspv_success_n=4):
-        '''
+    def perf_synopsis(stats_hash, lspv_str="", mtu_ok=False, lspv_success_n=4):
+        """
         This filter is applied to an existing ios_ipsla_stats hash and
         returns a brief explanation of the results. The LSPV code string
         can optionally be passed in. When this optional parameter is not
         included, MPLS connectivity is assumed to not exist. Filter will
         return False when the stats_hash is None (error condition).
-        '''
+        """
 
         if stats_hash is None:
             return False
 
         # Success defined when success is greater than 80%
-        lspv_ok = lspv_str.count('!') >= lspv_success_n
+        lspv_ok = lspv_str.count("!") >= lspv_success_n
 
         # Success defined when the RTT count is greater than 0
         # 0 means the probe ran but nothing completed
         # -1 means the system failed to collect any output
-        ipsla_ok = int(stats_hash['rtt_cnt']) > 0
+        ipsla_ok = int(stats_hash["rtt_cnt"]) > 0
 
         # Most common case, so it is processed first
         # Everything succeeded, so return OK
@@ -337,37 +371,37 @@ class FilterModule(object):
 
     @staticmethod
     def _get_sla_group(host, groups):
-        '''
+        """
         This function finds an inventory group corresponding to a host. Checks
         all the groups to see if a host is contained in that group. Given that
         this search is SLA specific, a host should only be in one group, so
         the function returns immediately upon the first match. False is
         returned if the host is not found in any group, which is considered
         to be an error case.
-        '''
-        #print('groups.keys():')
-        #print(groups.keys())
+        """
+        # print('groups.keys():')
+        # print(groups.keys())
         # Iterate over all group names
         for key in groups.keys():
             # If its a regional grouping of routers
-            if 'region' in key:
-                #print('checking key ' + key)
+            if "region" in key:
+                # print('checking key ' + key)
                 # Iterate over each host in the group list
                 for inv_item in groups[key]:
                     # Check to see if the host is in a given group
                     hostu = host.upper()
                     inv_itemu = inv_item.upper()
-                    #print('compare: {0} {1}'.format(hostu, inv_itemu))
+                    # print('compare: {0} {1}'.format(hostu, inv_itemu))
                     if hostu in inv_itemu or inv_itemu in hostu:
-                        #print('{0} is in group {1}'.format(host, key))
+                        # print('{0} is in group {1}'.format(host, key))
                         return key
 
-        #print('{0} not found in any group'.format(host))
+        # print('{0} not found in any group'.format(host))
         return False
 
     @staticmethod
     def get_sla(sla, groups, targets):
-        '''
+        """
         This function returns a list of SLA values for all hosts in the
         target list. The returned list is considered to be parallel to
         the target list and can be used for parallel iteration. The SLA
@@ -376,12 +410,12 @@ class FilterModule(object):
         a sanity check fails, such as the two lists not having the
         same length after the function's logic is complete, a value
         of False is returned.
-        '''
+        """
         # Find out what group the target hosts are in
         target_group_list = []
         for t in targets:
             # Find the group for a given target
-            tgt_group = FilterModule._get_sla_group(t['hostname'], groups)
+            tgt_group = FilterModule._get_sla_group(t["hostname"], groups)
             if not tgt_group:
                 return False
             # Add that group to the group list
@@ -392,29 +426,29 @@ class FilterModule(object):
         # Iterate over target groups, since each one needed
         # to be mapped to a regional SLA
         for t in target_group_list:
-            #print( 'getting SLA to group ' + t )
+            # print( 'getting SLA to group ' + t )
             # iterate over the 4 regional SLA keys
             for key in sla.keys():
-                #print ('testing sla ' + key )
+                # print ('testing sla ' + key )
                 # If the name of the group (eg, ios_per_conus) ends in
                 # the name of the key, we've found the right SLA
                 if t.endswith(key):
-                    #print('group {0} ends with {1}'.format(t,key))
+                    # print('group {0} ends with {1}'.format(t,key))
                     sla_list.append(int(sla[key]))
                     continue
 
-        #print(sla_list)
+        # print(sla_list)
 
         # Sanity check; target and SLA lists must be same length
         if len(sla_list) != len(targets):
-            #print('lists not same length')
+            # print('lists not same length')
             return False
 
         return sla_list
 
     @staticmethod
     def ios_ping_stats(text):
-        '''
+        """
         Parses integers from Cisco ping outputs. A dictionary containing
         6 keys with non-negative integer values is returned:
           pkt_per: Percent complete (0<=v<=100)
@@ -436,12 +470,12 @@ class FilterModule(object):
         The function has many sanity checks to ensure the parsing was
         correct and the integers make sense. Any failure results in
         a return false of False.
-        '''
+        """
         if text is None or text == "":
             return False
 
         # Develop regex and find digits
-        pattern = r'\d+'
+        pattern = r"\d+"
         re_list = re.findall(pattern, text)
 
         # Parse values to integers
@@ -457,25 +491,27 @@ class FilterModule(object):
 
         # Construct dictionary of parsed values
         cp_hash = {
-            'pkt_per': stats_list[0],
-            'pkt_cmp': stats_list[1],
-            'pkt_tot': stats_list[2],
-            'rtt_min': stats_list[3],
-            'rtt_avg': stats_list[4],
-            'rtt_max': stats_list[5]
+            "pkt_per": stats_list[0],
+            "pkt_cmp": stats_list[1],
+            "pkt_tot": stats_list[2],
+            "rtt_min": stats_list[3],
+            "rtt_avg": stats_list[4],
+            "rtt_max": stats_list[5],
         }
 
         # Sanity check; percent must be between 0 and 100
-        if cp_hash['pkt_per'] < 0 or cp_hash['pkt_per'] > 100:
+        if cp_hash["pkt_per"] < 0 or cp_hash["pkt_per"] > 100:
             return False
 
         # Sanity check; completed must be between 0 and total
-        if cp_hash['pkt_cmp'] < 0 or cp_hash['pkt_cmp'] > cp_hash['pkt_tot']:
+        if cp_hash["pkt_cmp"] < 0 or cp_hash["pkt_cmp"] > cp_hash["pkt_tot"]:
             return False
 
         # Sanity check; average RTT must be between min and max
-        if (cp_hash['rtt_avg'] < cp_hash['rtt_min'] or
-                cp_hash['rtt_avg'] > cp_hash['rtt_max']):
+        if (
+            cp_hash["rtt_avg"] < cp_hash["rtt_min"]
+            or cp_hash["rtt_avg"] > cp_hash["rtt_max"]
+        ):
             return False
 
         # CSV flag not set; return the dictionary structure
@@ -483,23 +519,28 @@ class FilterModule(object):
 
     @staticmethod
     def ios_ping_csv(cp_hash):
-        '''
+        """
         This filter return a string of values in clean CSV format given
         an input of a cisco ping hash (cp_hash) from the previous filter.
         This filter can simplify jinja2 templates, for example.
         The 6 integers are returned in CSV format as a string:
         "pkt_per,pkt_cmp,pkt_tot,rtt_min,rtt_avg,rtt_max"
-        '''
+        """
 
         # Return string of values in clean CSV format
         # This can simplify jinja2 templates, for example
         return "{0},{1},{2},{3},{4},{5}".format(
-            cp_hash['pkt_per'], cp_hash['pkt_cmp'], cp_hash['pkt_tot'],
-            cp_hash['rtt_min'], cp_hash['rtt_avg'], cp_hash['rtt_max'])
+            cp_hash["pkt_per"],
+            cp_hash["pkt_cmp"],
+            cp_hash["pkt_tot"],
+            cp_hash["rtt_min"],
+            cp_hash["rtt_avg"],
+            cp_hash["rtt_max"],
+        )
 
     @staticmethod
     def ios_parse_ip(text):
-        '''
+        """
         The function is a stopgap for the ios_facts module which in 2.4.x
         unreliably captures IP addresses due to an intermittent bug. The
         input text should look like the text below, and a hash is returned
@@ -507,13 +548,13 @@ class FilterModule(object):
         as separate strings.
           ROUTER#show ip interface Loopback | include Internet_address
            Internet address is 10.108.0.50/32
-        '''
+        """
         # Perform sanity check for valid input
         if not text:
             return False
         # Define regex and perform search
-        octet_str = r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}'
-        regex = r'(?<=Internet address is )({0})/(\d+)'.format(octet_str)
+        octet_str = r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}"
+        regex = r"(?<=Internet address is )({0})/(\d+)".format(octet_str)
         re_search = re.search(regex, text)
         if re_search:
             try:
@@ -521,9 +562,9 @@ class FilterModule(object):
                 ip_hash = {
                     "full_str": re_search.group(0),
                     "address": re_search.group(1),
-                    "subnet": int(re_search.group(2))
+                    "subnet": int(re_search.group(2)),
                 }
-                #print(ip_hash)
+                # print(ip_hash)
                 return ip_hash
             except socket.error:
                 return False
