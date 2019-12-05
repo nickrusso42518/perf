@@ -2,6 +2,10 @@
 https://travis-ci.org/nickrusso42518/perf.svg?branch=master)](
 https://travis-ci.org/nickrusso42518/perf)
 
+[![published](
+http://cs.co/codeex-badge)](
+https://developer.cisco.com/codeexchange/github/repo/nickrusso42518/perf)
+
 # Performance Testers
 This series of playbooks accomplishes a number of performance test
 tasks in the network. They are briefly described below, with each
